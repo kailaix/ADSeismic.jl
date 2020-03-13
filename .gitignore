@@ -24,4 +24,4 @@ docs/build
 *.mat
 test/figure
 test/.ipynb_checkpoints/
-
+!deps/build.jl

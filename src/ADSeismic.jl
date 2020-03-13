@@ -12,6 +12,7 @@ module ADSeismic
     using ProgressMeter
     using Optim
     using Printf
+    using Conda
 
 
     np = PyNULL()

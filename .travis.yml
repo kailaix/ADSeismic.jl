@@ -1,0 +1,28 @@
+sudo: required
+language: julia
+dist: xenial
+python:
+  - "3.6"
+git:
+  depth: 3
+  quiet: true
+julia:
+  - 1.3
+notifications:
+before_install:
+  - julia -e 'using Pkg; Pkg.add("ADCME")'
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.0
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg;Pkg.add("Documenter");Pkg.develop(PackageSpec(path=pwd()));
+                                               Pkg.instantiate(); Pkg.build("ADSeismic")'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip
+notifications:
+  email: false
+cache:
+  directories:
+  - /home/travis/.julia/conda/3/

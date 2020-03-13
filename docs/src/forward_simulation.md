@@ -110,7 +110,7 @@ We benchmark the simulation on CPU and GPU. The configuration for GPU and CPU ar
 | ---------------------------------------- | --------------------------- |
 | Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz | NVIDIA Tesla V100-PCIE-32GB |
 
-The benchmark script can be found in [BenchmarkAcoustic.jl](https://github.com/wayneweiqiang/ADSeismic.jl/blob/master/test/BenchmarkAcoustic.jl) and [BenchmarkElastic.jl](https://github.com/wayneweiqiang/ADSeismic.jl/blob/master/test/BenchmarkElastic.jl).  
+The benchmark script can be found in [BenchmarkAcoustic.jl](https://github.com/kailaix/ADSeismic.jl/blob/master/test/BenchmarkAcoustic.jl) and [BenchmarkElastic.jl](https://github.com/kailaix/ADSeismic.jl/blob/master/test/BenchmarkElastic.jl).  
 
  The following shows the comparison of the simulation time for CPU and GPU. 
 
@@ -123,7 +123,7 @@ The benchmark script can be found in [BenchmarkAcoustic.jl](https://github.com/w
 
 ## Multi-GPUs
 
-With only a few modification to the original simulation codes, the model can also be run on multi-GPUs (see [AcousticMultiGPU.jl](https://github.com/wayneweiqiang/ADSeismic.jl/blob/master/test/AcousticMultiGPU.jl) for the full script). In this example, we compute the gradients of the loss function (the discrepancy between the observed seismic data and the simulated seismic data) with respect to the acoustic velocity. 
+With only a few modification to the original simulation codes, the model can also be run on multi-GPUs (see [AcousticMultiGPU.jl](https://github.com/kailaix/ADSeismic.jl/blob/master/test/AcousticMultiGPU.jl) for the full script). In this example, we compute the gradients of the loss function (the discrepancy between the observed seismic data and the simulated seismic data) with respect to the acoustic velocity. 
 
 In the following code snippets, we explicitly place different source functions to different GPUs. This can be done with the  `@pywith tf.device("/gpu:0")` syntax, and the enclosed codes are executed on 0-th GPU.  
 

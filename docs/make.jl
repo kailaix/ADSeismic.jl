@@ -10,5 +10,5 @@ pages = Any["index.md",
 
 
 deploydocs(
-    repo = "github.com/wayneweiqiang/ADSeismic.jl.git",
+    repo = "github.com/kailaix/ADSeismic.jl.git",
 )

@@ -26,9 +26,13 @@ ADSeismic is built on [ADCME.jl](https://github.com/kailaix/ADCME.jl/), an autom
 using Pkg; Pkg.add("ADCME")
 ```
 
-Then install ADSeismic.jl by
+Then install the lastest ADSeismic.jl by
 ```julia
-using Pkg; Pkg.add("https://github.com/wayneweiqiang/ADSeismic.jl#master")
+using Pkg; Pkg.add("https://github.com/kailaix/ADSeismic.jl#master")
+```
+or the stable version by 
+```julia
+using Pkg; Pkg.add("ADCME")
 ```
 
 If you want to use GPU for ADSeismic.jl, you should enable GPU support in ADCME by 

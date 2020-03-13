@@ -5,7 +5,7 @@ In this section, we describe three inversion problems in seismic imaging: invert
 Despite the method described here is also applicable to elastic wave equation, we consider the simpler the acoustic wave equation
 $\begin{aligned} {u_{tt}} - {c^2}\Delta u =& f \\ u =& {u_0} \\ {u_t} =& {v_0} \end{aligned}$
 
-Here $f$ is the source function, $u_0$ and $v_0$ are initial conditions. For numerical simulation, the perfect matched layer boundary condition is used to truncate the computational domain. See [Acoustic Wave Simulation](https://wayneweiqiang.github.io/ADSeismic.jl/dev/forward_simulation/#Acoustic-Wave-Simulation-1) for details. 
+Here $f$ is the source function, $u_0$ and $v_0$ are initial conditions. For numerical simulation, the perfect matched layer boundary condition is used to truncate the computational domain. See [Acoustic Wave Simulation](https://kailaix.github.io/ADSeismic.jl/dev/forward_simulation/#Acoustic-Wave-Simulation-1) for details. 
 
 ## Inverting Velocity Model
 

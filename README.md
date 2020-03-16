@@ -14,6 +14,7 @@ ADSeismic is suitable for general inversion problems in seismic imaging. The pac
 - **(Multi-)GPU support**: support for GPU acceleration as well as multi-GPU (in theory TPUs are also supported).
 - **Easy-to-use**: no adjoint state method codes required for building your own inversion models; automatic differentiation is the workhorce.
 
+See our paper [A General Approach to Seismic Inversion with Automatic Differentiation](https://arxiv.org/pdf/2003.06027.pdf) for more details. 
 
 ## Installation
 
@@ -35,4 +36,6 @@ To enable GPU support, make sure `nvcc` is available on your machine, and then
 using ADCME
 enable_gpu()
 ```
+
+
 

@@ -38,6 +38,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 find_program(_nvidia_smi "nvidia-smi")
 if (_nvidia_smi)
+  find_package(CUDA)
   cuda_add_library(GetReceive SHARED GetReceive.cu GetReceive.cpp GetReceive.cc)
 else()
   add_library(GetReceive SHARED GetReceive.cpp GetReceive.cc)

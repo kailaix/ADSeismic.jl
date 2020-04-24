@@ -27,4 +27,4 @@ ProgressMeter = "1"
 PyCall = "1.91"
 PyPlot = "2"
 julia = "1"
-ADCME = 0.5
+ADCME = "0.5"

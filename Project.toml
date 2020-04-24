@@ -1,7 +1,7 @@
 name = "ADSeismic"
 uuid = "65edcd7e-b178-4558-a546-bf867610404b"
 authors = ["Kailai Xu <kailaix@hotmail.com>", "Weiqiang Zhu <zhuwq@stanford.edu>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 ADCME = "07b341a0-ce75-57c6-b2de-414ffdc00be5"
@@ -19,12 +19,12 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-ADCME = "0.4,0.5"
 Conda = "1"
 MAT = "0"
 Optim = "0"
 Parameters = "0"
 ProgressMeter = "1"
 PyCall = "1.91"
-PyPlot = "2.8"
+PyPlot = "2"
 julia = "1"
+ADCME = 0.5

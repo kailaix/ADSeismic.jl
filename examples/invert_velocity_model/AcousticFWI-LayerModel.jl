@@ -56,7 +56,7 @@ g = sum(gs)
 loss = sum(losses)
 sess = Session(); init(sess)
 
-vp = (run(sess, ap_sim.vp)).^0.5
+vp = (run(sess, ap_sim.vp.contents)).^0.5
 scale = mean(vp)
 vmax = maximum(vp)
 vmin = minimum(vp)

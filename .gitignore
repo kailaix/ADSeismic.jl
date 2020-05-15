@@ -21,7 +21,6 @@ docs/build
 ._*
 .*.swp
 !*CMakeLists.txt
-*.mat
 test/figure
 test/.ipynb_checkpoints/
 !deps/build.jl

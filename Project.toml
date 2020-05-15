@@ -19,6 +19,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+ADCME = "0.5.2"
 Conda = "1"
 MAT = "0"
 Optim = "0"
@@ -27,4 +28,3 @@ ProgressMeter = "1"
 PyCall = "1.91"
 PyPlot = "2"
 julia = "1"
-ADCME = "0.5"

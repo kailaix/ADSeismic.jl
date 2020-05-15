@@ -4,24 +4,21 @@ using PyPlot
 using PyCall
 using DelimitedFiles
 using Statistics
-matplotlib.use("Agg")
 use_gpu()
 
+function mkpath_by_force(path)
+  if !isdir(path)
+    mkpath(path)
+  end
+end
+
 output_dir = "data/acoustic"
-if !ispath(output_dir)
-  mkpath(output_dir)
-end
 figure_dir = "figure/acoustic/layer-model/"
-if !ispath(figure_dir)
-  mkpath(figure_dir)
-end
 result_dir = "result/acoustic/layer-model/"
-if !ispath(result_dir)
-  mkpath(result_dir)
-end
-# if isfile(joinpath(result_dir, "loss.txt"))
-#   rm(joinpath(result_dir, "loss.txt"))
-# end
+
+mkpath_by_force(output_dir)
+mkpath_by_force(figure_dir)
+mkpath_by_force(result_dir)
 
 ################### Generate synthetic data #####################
 reset_default_graph()

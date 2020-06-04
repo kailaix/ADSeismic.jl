@@ -53,8 +53,19 @@ function load_elastic_source(filename::String)
 end
 
 
-function load_acoustic_model(filename::String; 
-    inv_vp::Bool = false, kwargs...)
+"""
+load_acoustic_model(filename::String; inv_vp::Bool = false, kwargs...)
+
+Load acoustic model from a MAT file.
+
+# Arguments
+- 'filename::String': MAT filename
+- 'inv_vp::Bool': inversion of velocity (default: false)
+
+# Return
+- AcousticPropagatorSolver(src::AcousticSource)
+"""
+function load_acoustic_model(filename::String; inv_vp::Bool = false, kwargs...)
     d = matread(filename)
     kwargs = Dict{Any, Any}(kwargs)
     mask = missing

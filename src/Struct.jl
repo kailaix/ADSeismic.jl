@@ -115,7 +115,7 @@ mutable struct AcousticPropagator
     param::AcousticPropagatorParams
     src::AcousticSource
     u::PyObject
-    # auxilliary variables
+    # auxillary variables for PML
     φ::PyObject
     ψ::PyObject
 end

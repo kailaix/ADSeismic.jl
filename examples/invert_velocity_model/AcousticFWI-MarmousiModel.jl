@@ -1,11 +1,14 @@
 using ADSeismic
+using Revise
 using ADCME
 using PyPlot
 using PyCall
 using DelimitedFiles
 using Statistics
 matplotlib.use("Agg")
+if has_gpu()
 use_gpu()
+end
 
 output_dir = "data/acoustic"
 if !ispath(output_dir)
@@ -30,7 +33,12 @@ ap_sim = load_acoustic_model("models/marmousi2-model-true.mat", IT_DISPLAY=0)
 src = load_acoustic_source("models/marmousi2-model-true.mat")
 rcv_sim = load_acoustic_receiver("models/marmousi2-model-true.mat")
 
-Rs_ = compute_forward_GPU(ap_sim, src, rcv_sim)
+if has_gpu()
+  Rs_ = compute_forward_GPU(ap_sim, src, rcv_sim)
+else
+  [SimulatedObservation!(ap_sim(src[i]), rcv_sim[i]) for i = 1:length(src)]
+  Rs_ = [rcv_sim[i].rcvv for i = 1:length(rcv_sim)]
+end
 
 sess = Session(); init(sess)
 
@@ -55,9 +63,15 @@ for i = 1:length(src)
     Rs[i] = readdlm(joinpath(output_dir, "marmousi-r$i.txt"))
 end
 
-losses, gs = compute_loss_and_grads_GPU(ap_sim, src, rcv_sim, Rs, get_collection()[1])
-g = sum(gs)
-loss = sum(losses)
+if has_gpu()
+  losses, gs = compute_loss_and_grads_GPU(ap_sim, src, rcv_sim, Rs, get_collection()[1])
+  g = sum(gs)
+  loss = sum(losses)
+else
+  [SimulatedObservation!(ap_sim(src[i]), rcv_sim[i]) for i = 1:length(src)]
+  loss = sum([sum((rcv_sim[i].rcvv-Rs[i])^2) for i = 1:length(rcv_sim)]) 
+end
+
 sess = Session(); init(sess)
 
 vp = (run(sess, ap_sim.vp.contents)).^0.5./1e3
@@ -86,5 +100,8 @@ function callback(x, iter, loss)
   end
 end
 
-
-LBFGS!(sess, loss, g, get_collection()[1]; callback=callback)
+if has_gpu()
+  LBFGS!(sess, loss, g, get_collection()[1]; callback=callback)
+else
+  LBFGS!(sess, loss, vars=[get_collection()[1]]; callback=callback)
+end

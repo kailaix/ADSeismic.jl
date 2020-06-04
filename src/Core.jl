@@ -470,9 +470,19 @@ function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, 
     u, φ, ψ
 end
 
+"""
+AcousticPropagatorSolver(param::AcousticPropagatorParams, src::AcousticSource, c::Union{PyObject, Array{Float64, 2}})
 
-function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::AcousticSource, 
-    c::Union{PyObject, Array{Float64, 2}})
+# Arguments
+- 'param::AcousticPropagatorParams': model configuration parameters, such as NX, NT
+- 'src::AcousticSource': source locations
+- 'c::Union{PyObject, Array{Float64, 2}}': velocity model
+
+# Return
+- 'AcousticPropagator': forward calculation results, like displacement u
+"""
+function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::AcousticSource, c::Union{PyObject, Array{Float64, 2}})
+
     c = tf.reshape(convert_to_tensor(c), (-1,))
     compute_PML_Params!(param)
 
@@ -482,13 +492,14 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
     tu = TensorArray(param.NSTEP+1; clear_after_read=false)
     tφ = TensorArray(param.NSTEP+1; clear_after_read=true)
     tψ = TensorArray(param.NSTEP+1; clear_after_read=true)
+
     function condition(i, ta, tφ, tψ)
         i<=param.NSTEP+1
     end
+
     function body(i, ta, tφ, tψ)
         
-        u, φ, ψ = one_step(param, read(ta, i-1),read(ta, i-2), read(tφ, i-1), read(tψ, i-1),
-                    σij, τij, c)
+        u, φ, ψ = one_step(param, read(ta, i-1),read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c)
         srci,srcj,srcv = AcousticSourceAtTimeT(src, i-1)
 
         if param.IT_DISPLAY>0
@@ -496,14 +507,13 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
             i = bind(i, op)
         end
 
-        # u = acoustic_wave_op(u, srci, srcj, srcv*param.DELTAT^2, constant(param.NX), constant(param.NY))
-
         src_index = (srci - 1) * (param.NY+2) + srcj 
         u = scatter_add(u, src_index, srcv*param.DELTAT^2)
 
         ta_, tφ_, tψ_ = write(ta, i, u), write(tφ, i, φ), write(tψ, i, ψ)
         i+1, ta_, tφ_, tψ_
     end
+
     tu = write(tu, 1, constant(zeros((param.NX+2)*(param.NY+2))))
     tφ = write(tφ, 1, constant(zeros((param.NX+2)*(param.NY+2))))
     tψ = write(tψ, 1, constant(zeros((param.NX+2)*(param.NY+2))))
@@ -515,6 +525,7 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
     tu = tf.reshape(stack(tu), (param.NSTEP+1, param.NX+2, param.NY+2))
     tφ = tf.reshape(stack(tφ), (param.NSTEP+1, param.NX+2, param.NY+2))
     tψ = tf.reshape(stack(tψ), (param.NSTEP+1, param.NX+2, param.NY+2))
+
     AcousticPropagator(param, src, tu, tφ, tψ)
 end
 
@@ -616,11 +627,14 @@ function AcousticSourceAtTimeT(src::AcousticSource,i::PyObject)
 end
 
 
-function SimulatedObservation!(ep::AcousticPropagator, rcv::AcousticReceiver)
-    # u = get_receive_acoustic(ep.u,)
-    # u = ep.u[]
-    idx = (rcv.rcvi .- 1) *  (ep.param.NY+2) + rcv.rcvj 
-    u = reshape(ep.u, ep.param.NSTEP+1, (ep.param.NX+2)*(ep.param.NY+2))[:, idx]
+"""
+    SimulatedObservation!(ap::AcousticPropagator, rcv::AcousticReceiver)
+
+Extract and save simulated displacement u into rcv::AcousticReceiver.
+"""
+function SimulatedObservation!(ap::AcousticPropagator, rcv::AcousticReceiver)
+    idx = (rcv.rcvi .- 1) *  (ap.param.NY+2) + rcv.rcvj 
+    u = reshape(ap.u, ap.param.NSTEP+1, (ap.param.NX+2)*(ap.param.NY+2))[:, idx]
     rcv.rcvv = u
 end
 

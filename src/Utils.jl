@@ -1,7 +1,37 @@
-export Ricker, Gauss, compute_default_properties, 
-    visualize, visualize_file, gradtest, compute_loss_and_grads_GPU, compute_forward_GPU,
+export visualize_wavefield, Ricker, Gauss, compute_default_properties, 
+    gradtest, compute_loss_and_grads_GPU, compute_forward_GPU,
     variable_source, sampling_compute_loss_and_grads_GPU, sampling_compute_loss_and_grads_GPU_v2,
     sampling_compute_loss_and_grads_GPU_v3
+
+function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams}; dirs::String="figures", kwargs...) 
+    
+    if !isdir(dirs)
+        dirs="./"
+    end
+    
+    figure()
+    vmin = -3std(val)
+    vmax = 3std(val)
+    dt = max(1, div(param.NSTEP, 20))
+
+    pl = matshow(val[1,:,:]', cmap="jet", vmin=vmin, vmax=vmax)
+    t = title("Time = $(round(0.0, digits=2))")
+    colorbar(shrink=0.8)
+    gca().xaxis.set_ticks_position("bottom")
+    xlabel("X")
+    ylabel("Y")
+
+    function update(i)
+        pl[:set_data](val[i,:,:]')
+        t.set_text("Time = $(round((i-1)*param.DELTAT, digits=2))")
+    end
+    p = animate(update, [2:dt:size(val, 1);])
+    saveanim(p, joinpath(dirs, "forward_wavefield.gif"))
+
+    return p
+end
+    
+
 
 """
     Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams}, 
@@ -80,65 +110,6 @@ function compute_properties(vp::Union{PyObject, Array{Float64}},
     μ = ρ .* vs .* vs
     λ = ρ .* vp .* vp - 2 * μ
     λ, μ, ρ
-end
-
-function visualize(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams},
-        args...; kwargs...) 
-    # vmin = mean(val)-0.01*std(val)
-    # vmax = mean(val)+0.01*std(val)
-
-    vmin = -std(val)
-    vmax = std(val)
-    close("all")
-    im = matshow(val[1,:,:], cmap="jet", vmin=vmin, vmax=vmax)
-    colorbar()
-    # im[:set_clim](-0.5,0.5)
-    xlabel("x")
-    ylabel("y")
-    gca().xaxis.set_ticks_position("bottom")
-    dt = max(1, div(param.NSTEP, 500))
-    for i = 2:dt:size(val, 1)
-        im[:set_data](val[i,:,:])
-        title("time = $(round((i-1)*param.DELTAT, digits=2))")
-        pause(0.01)
-    end
-end
-
-function visualize_file(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams},
-    args...;dirs::String="default", kwargs...) 
-    
-    if !isdir(dirs)
-        mkdir(dirs)
-    end
-
-    vmin = -3std(val)
-    vmax = 3std(val)
-    close("all")
-    im = matshow(val[1,:,:]', cmap="jet", vmin=vmin, vmax=vmax)
-    colorbar(shrink=0.8)
-    gca().xaxis.set_ticks_position("bottom")
-
-    xlabel("X")
-    ylabel("Y")
-    dt = max(1, div(param.NSTEP, 20))
-    @showprogress 1 "Making Animation..."  for i = 2:dt:size(val, 1)
-        im[:set_data](val[i,:,:]')
-        title("Time = $(round((i-1)*param.DELTAT, digits=2))")
-        savefig(joinpath(dirs, "sim_$(lpad(i,4,"0")).png"))
-    end
-
-end
-
-function visualize(val::Array{Float64, 2}, 
-    param::Union{ElasticPropagatorParams,AcousticPropagatorParams};
-    filename::Union{Missing, String}="default.png")
-    vmin = -std(val)
-    vmax = std(val)
-    close("all")
-    matshow(val, cmap="jet", vmin=vmin, vmax=vmax)
-    if !ismissing(filename)
-        savefig(filename)
-    end
 end
 
 function gradtest(sess::PyObject, o::PyObject, g::PyObject, loss::PyObject)

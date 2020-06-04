@@ -1,11 +1,10 @@
-using ADSeismic
 using Revise
+using ADSeismic
 using ADCME
 using PyPlot
-using PyCall
 using DelimitedFiles
-using Statistics
-matplotlib.use("Agg")
+# matplotlib.use("Agg")
+close("all")
 if has_gpu()
 use_gpu()
 end
@@ -32,6 +31,9 @@ reset_default_graph()
 ap_sim = load_acoustic_model("models/marmousi2-model-true.mat", IT_DISPLAY=0)
 src = load_acoustic_source("models/marmousi2-model-true.mat")
 rcv_sim = load_acoustic_receiver("models/marmousi2-model-true.mat")
+## For debug, only run the first source
+src = [src[1]]
+rcv_sim = [rcv_sim[1]]
 
 if has_gpu()
   Rs_ = compute_forward_GPU(ap_sim, src, rcv_sim)
@@ -48,8 +50,9 @@ for i = 1:length(src)
     writedlm(joinpath(output_dir, "marmousi-r$i.txt"), Rs[i])
 end
 
+## visualize_wavefield if needed
 u = run(sess, ap_sim(src[div(length(src),2)+1]).u)
-visualize_file(u, ap_sim.param, dirs=figure_dir)
+visualize_wavefield(u, ap_sim.param)
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
@@ -57,6 +60,9 @@ reset_default_graph()
 ap_sim = load_acoustic_model("models/marmousi2-model-smooth.mat"; inv_vp=true, IT_DISPLAY=0)
 src = load_acoustic_source("models/marmousi2-model-true.mat")
 rcv_sim = load_acoustic_receiver("models/marmousi2-model-true.mat")
+## For debug, only run the first source
+src = [src[1]]
+rcv_sim = [rcv_sim[1]]
 
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
@@ -79,11 +85,12 @@ scale = mean(vp)
 vmax = maximum(vp)
 vmin = minimum(vp)
 
-function callback(x, iter, loss)
+function callback(vs, iter, loss)
   if iter%10==0
-    X = Array(reshape(x, ap_sim.param.NY+2, ap_sim.param.NX+2))
-    close("all")
-    pcolormesh([0:ap_sim.param.NX+1;]*ap_sim.param.DELTAX/1e3,[0:ap_sim.param.NY+1;]*ap_sim.param.DELTAY/1e3,  X*scale)
+    vp = vs[1]
+    # vp = Array(reshape(vp, ap_sim.param.NY+2, ap_sim.param.NX+2))
+    clf()
+    pcolormesh([0:ap_sim.param.NX+1;]*ap_sim.param.DELTAX/1e3,[0:ap_sim.param.NY+1;]*ap_sim.param.DELTAY/1e3,  vp'*scale)
     axis("scaled")
     colorbar(shrink=0.4)
     xlabel("x (km)")
@@ -91,17 +98,17 @@ function callback(x, iter, loss)
     gca().invert_yaxis()
     title("Iteration = $iter")
     savefig(joinpath(figure_dir, "inv_$(lpad(iter,5,"0")).png"))
-    writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), X*scale)
+    writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), vp*scale)
+
     open(joinpath(result_dir, "loss.txt"), "a") do io 
       writedlm(io, loss)
     end
   else
-    return 
   end
 end
 
 if has_gpu()
-  LBFGS!(sess, loss, g, get_collection()[1]; callback=callback)
+  BFGS!(sess, loss, g, get_collection()[1]; callback=callback)
 else
-  LBFGS!(sess, loss, vars=[get_collection()[1]]; callback=callback)
+  BFGS!(sess, loss, vars=[get_collection()[1]], callback=callback)
 end

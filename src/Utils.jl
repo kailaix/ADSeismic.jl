@@ -154,10 +154,10 @@ Computes the loss and the gradients of the model on all available GPUs.
 """
 function compute_loss_and_grads_GPU(model::Function, src::Union{Array{AcousticSource},Array{ElasticSource}},
          rcv_sim::Union{Array{AcousticReceiver}, Array{ElasticReceiver}}, Rs::Array{Array{Float64,2},1}, vs::Union{PyObject, Array{PyObject}})
-    if model.param.IT_DISPLAY!=0
-        @warn "To use GPU, IT_DISPLAY must be 0. Setting IT_DISPLAY to 0..."
-        model.param.IT_DISPLAY = 0
-    end
+    # if model.param.IT_DISPLAY!=0
+    #     @warn "To use GPU, IT_DISPLAY must be 0. Setting IT_DISPLAY to 0..."
+    #     model.param.IT_DISPLAY = 0
+    # end
     flag = isa(vs, PyObject)
     function run_on_gpu_device(gpu_id, jobs)
         local loss, g

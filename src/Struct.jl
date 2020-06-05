@@ -26,7 +26,7 @@ export ElasticPropagatorParams, ElasticPropagator, ElasticSource, ElasticReceive
     Rcoef::Float64 = 0.001 # Relative reflection coefficient
     
     # display params
-    IT_DISPLAY::Int64 = 200
+    IT_DISPLAY::Int64 = 0
 end
 
 mutable struct ElasticSource
@@ -91,7 +91,7 @@ end
     InJp::Array{Int64} = []
     
     # display params
-    IT_DISPLAY::Int64 = 200
+    IT_DISPLAY::Int64 = 0
 end
 
 mutable struct AcousticSource

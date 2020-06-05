@@ -1,5 +1,24 @@
-export load_elastic_model, load_elastic_receiver, load_elastic_source,
+export  load_params, load_elastic_model, load_elastic_receiver, load_elastic_source,
         load_acoustic_model, load_acoustic_receiver, load_acoustic_source
+
+function load_params(filename::String, option::String="Acoustic"; kwargs...)
+
+    d =  matread(filename)
+
+    if option == "Acoustic"
+        param = AcousticPropagatorParams(NX=d["nx"]-2, NY=d["ny"]-2,
+                        NSTEP=d["nt"], DELTAX=d["dx"], 
+                        DELTAY=d["dy"], DELTAT=d["dt"], kwargs...)
+    elseif option == "Elastic"
+        param = ElasticPropagatorParams(NX=d["nx"]-2, NY=d["ny"]-2,
+                        NSTEP=d["nt"], DELTAX=d["dx"], 
+                        DELTAY=d["dy"], DELTAT=d["dt"], kwargs...)
+    else
+        error("option should be either Acoustic or Elastic!");
+    end
+
+    return param
+end
 
 function load_elastic_model(filename::String; 
         inv_vp::Bool = false, inv_vs::Bool = false, inv_rho::Bool = false,
@@ -79,8 +98,7 @@ function load_acoustic_model(filename::String; inv_vp::Bool = false, kwargs...)
     end
     param = AcousticPropagatorParams(NX=d["nx"]-2, NY=d["ny"]-2,
                         NSTEP=d["nt"], DELTAX=d["dx"], 
-                        DELTAY=d["dy"], DELTAT=d["dt"],
-                        vp_ref=mean(d["vp"]); kwargs...)
+                        DELTAY=d["dy"], DELTAT=d["dt"], kwargs...)
     if (@isdefined vp)
         ap_fun = x->AcousticPropagatorSolver(param, x, vp^2)
     else

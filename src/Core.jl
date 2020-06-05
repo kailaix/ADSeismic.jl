@@ -446,8 +446,7 @@ end
 # todo:
 # one_step(::AcousticPropagatorParams, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject)
 
-function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ,
-σ::PyObject, τ::PyObject, c::PyObject)
+function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
     Δt = param.DELTAT
     hx, hy = param.DELTAX, param.DELTAY
     IJ, IpJ, InJ, IJp, IJn, IpJp, IpJn, InJp, InJn =
@@ -499,8 +498,8 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
 
     function body(i, ta, tφ, tψ)
         
-        u, φ, ψ = one_step(param, read(ta, i-1),read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c)
-        srci,srcj,srcv = AcousticSourceAtTimeT(src, i-1)
+        u, φ, ψ = one_step(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c)
+        srci, srcj, srcv = AcousticSourceAtTimeT(src, i-1)
 
         if param.IT_DISPLAY>0
             op = tf.cond(tf.equal(tf.math.floormod(i,param.IT_DISPLAY),1), ()->tf.print("time step = ", i-1, " out of $(param.NSTEP)"), ()->tf.no_op())

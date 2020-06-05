@@ -29,7 +29,8 @@ module ADSeismic
 
     include("Struct.jl")
     include("Core.jl")
-    include("Io.jl")
+    include("IO.jl")
+    include("NN.jl")
     include("Optim.jl")
     include("Utils.jl")
 

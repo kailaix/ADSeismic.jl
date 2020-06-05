@@ -2,6 +2,7 @@ module ADSeismic
 
     using ADCME
     using ADCMEKit
+    using Optim
     using PyPlot
     using PyCall
     using SparseArrays
@@ -29,6 +30,7 @@ module ADSeismic
     include("Struct.jl")
     include("Core.jl")
     include("Io.jl")
+    include("Optim.jl")
     include("Utils.jl")
 
 end

@@ -8,15 +8,14 @@ using DelimitedFiles
 # matplotlib.use("Agg")
 close("all")
 if has_gpu()
-  use_gpu()
   gpu = true
 else
   gpu = false
 end
 
-output_dir = "data/acoustic"
-if !ispath(output_dir)
-  mkpath(output_dir)
+data_dir = "data/acoustic"
+if !ispath(data_dir)
+  mkpath(data_dir)
 end
 figure_dir = "figure/PhysGNN_V1/"
 if !ispath(figure_dir)
@@ -29,35 +28,6 @@ end
 # if isfile(joinpath(result_dir, "loss.txt"))
 #   rm(joinpath(result_dir, "loss.txt"))
 # end
-
-################### Generate synthetic data #####################
-# reset_default_graph()
-
-# ap_sim = load_acoustic_model("models/marmousi2-model-true.mat")
-# src = load_acoustic_source("models/marmousi2-model-true.mat")
-# rcv = load_acoustic_receiver("models/marmousi2-model-true.mat")
-# ## For debug, only run the first source
-# # src = [src[1]]
-# # rcv = [rcv[1]]
-
-# if gpu
-#   Rs_ = compute_forward_GPU(ap_sim, src, rcv)
-# else
-#   [SimulatedObservation!(ap_sim(src[i]), rcv[i]) for i = 1:length(src)]
-#   Rs_ = [rcv[i].rcvv for i = 1:length(rcv)]
-# end
-
-# sess = Session(); init(sess)
-
-# Rs = run(sess, Rs_)
-
-# for i = 1:length(src)
-#     writedlm(joinpath(output_dir, "marmousi-r$i.txt"), Rs[i])
-# end
-
-## visualize_wavefield if needed
-# u = run(sess, ap_sim(src[div(length(src),2)+1]).u)
-# visualize_wavefield(u, ap_sim.param)
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
@@ -84,7 +54,7 @@ vp0 = constant(vp0)
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-    Rs[i] = readdlm(joinpath(output_dir, "marmousi-r$i.txt"))
+    Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
 end
 
 ## add NN
@@ -97,7 +67,7 @@ vp = vp0 + tf.slice(x, (size(x).-(size(x)[1], size(vp0)...)).÷2, (size(x)[1], s
 # model = x->AcousticPropagatorSolver(params, x, vp^2)
 models = Array{Any}(undef, batch_size)
 for i = 1:batch_size
-  vp = vp0 + tf.slice(x[i-1], (size(x[i-1]).-size(vp0)).÷2, size(vp0))
+  vp = vp0 + tf.slice(x[i], (size(x[i]).-size(vp0)).÷2, size(vp0))
   models[i] = x->AcousticPropagatorSolver(params, x, vp^2)
 end
 
@@ -121,7 +91,7 @@ sess = Session(); init(sess)
 i = rand(1:nsrc)
 dic = Dict(
   isTrain=>true,
-  z=>rand(Float32, size(z)...),
+  z=>randn(Float32, size(z)...),
   y=>randn(size(y)...),
   si_=>src[i].srci,
   sj_=>src[i].srcj,
@@ -131,10 +101,10 @@ dic = Dict(
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
 losses = []
-σ = 0.0
-fixed_z = rand(Float32, size(z)...)
+σ = 0.1
+fixed_z = randn(Float32, size(z)...)
 for iter = 1:1000000000
-    if iter%10==1
+    if iter%50==1
       dic = Dict(
         isTrain=>true,
         z=>fixed_z
@@ -145,7 +115,7 @@ for iter = 1:1000000000
 
     dic = Dict(
       isTrain=>true,
-      z=>rand(Float32, size(z)...),
+      z=>randn(Float32, size(z)...),
       y=>randn(size(y)...) * σ * std(Rs[i]),
       si_=>src[i].srci,
       sj_=>src[i].srcj,

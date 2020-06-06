@@ -15,9 +15,9 @@ else
 end
 
 
-output_dir = "data/acoustic"
-if !ispath(output_dir)
-  mkpath(output_dir)
+data_dir = "data/acoustic"
+if !ispath(data_dir)
+  mkpath(data_dir)
 end
 figure_dir = "figure/acoustic/marmousi/"
 if !ispath(figure_dir)
@@ -30,35 +30,6 @@ end
 # if isfile(joinpath(result_dir, "loss.txt"))
 #   rm(joinpath(result_dir, "loss.txt"))
 # end
-
-################### Generate synthetic data #####################
-# reset_default_graph()
-
-# ap_sim = load_acoustic_model("models/marmousi2-model-true.mat")
-# src = load_acoustic_source("models/marmousi2-model-true.mat")
-# rcv = load_acoustic_receiver("models/marmousi2-model-true.mat")
-# ## For debug, only run the first source
-# # src = [src[1]]
-# # rcv = [rcv[1]]
-
-# if gpu
-#   Rs_ = compute_forward_GPU(ap_sim, src, rcv)
-# else
-#   [SimulatedObservation!(ap_sim(src[i]), rcv[i]) for i = 1:length(src)]
-#   Rs_ = [rcv[i].rcvv for i = 1:length(rcv)]
-# end
-
-# sess = Session(); init(sess)
-
-# Rs = run(sess, Rs_)
-
-# for i = 1:length(src)
-#     writedlm(joinpath(output_dir, "marmousi-r$i.txt"), Rs[i])
-# end
-
-## visualize_wavefield if needed
-# u = run(sess, ap_sim(src[div(length(src),2)+1]).u)
-# visualize_wavefield(u, ap_sim.param)
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
@@ -88,7 +59,7 @@ vp0 = constant(vp0)
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-    Rs[i] = readdlm(joinpath(output_dir, "marmousi-r$i.txt"))
+    Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
 end
 
 ## add NN
@@ -101,7 +72,7 @@ x = x * std_vp0
 models = Array{Any}(undef, nsrc, batch_size)
 for i = 1:nsrc
   for j = 1:batch_size
-    vp = vp0 + tf.slice(x[j-1], (size(x[j-1]).-size(vp0)).÷2, size(vp0))
+    vp = vp0 + tf.slice(x[j], (size(x[j]).-size(vp0)).÷2, size(vp0))
     models[i,j] = x->AcousticPropagatorSolver(params, x, vp^2)
   end
 end
@@ -154,6 +125,8 @@ dic = Dict(
 )
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
+
+## run inversion
 losses = []
 σ = 0.0
 for iter = 1:1000000000

@@ -7,22 +7,21 @@ using DelimitedFiles
 # matplotlib.use("Agg")
 close("all")
 if has_gpu()
-  use_gpu()
   gpu = true
 else
   gpu = false
 end
 
 
-output_dir = "data/acoustic"
-if !ispath(output_dir)
-  mkpath(output_dir)
+data_dir = "data/acoustic"
+if !ispath(data_dir)
+  mkpath(data_dir)
 end
-figure_dir = "figure/acoustic/marmousi/"
+figure_dir = "figure/acoustic/reg/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/acoustic/marmousi/"
+result_dir = "result/acoustic/reg/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
@@ -30,51 +29,24 @@ end
 #   rm(joinpath(result_dir, "loss.txt"))
 # end
 
-################### Generate synthetic data #####################
-# reset_default_graph()
-
-# ap_sim = load_acoustic_model("models/marmousi2-model-true.mat")
-# src = load_acoustic_source("models/marmousi2-model-true.mat")
-# rcv = load_acoustic_receiver("models/marmousi2-model-true.mat")
-# ## For debug, only run the first source
-# # src = [src[1]]
-# # rcv = [rcv[1]]
-
-# if gpu
-#   Rs_ = compute_forward_GPU(ap_sim, src, rcv)
-# else
-#   [SimulatedObservation!(ap_sim(src[i]), rcv[i]) for i = 1:length(src)]
-#   Rs_ = [rcv[i].rcvv for i = 1:length(rcv)]
-# end
-
-# sess = Session(); init(sess)
-
-# Rs = run(sess, Rs_)
-
-# for i = 1:length(src)
-#     writedlm(joinpath(output_dir, "marmousi-r$i.txt"), Rs[i])
-# end
-
-## visualize_wavefield if needed
-# u = run(sess, ap_sim(src[div(length(src),2)+1]).u)
-# visualize_wavefield(u, ap_sim.param)
-
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
+model_name = "models/marmousi2-model-smooth.mat"
 
-params = load_params("models/marmousi2-model-smooth.mat")
-src = load_acoustic_source("models/marmousi2-model-smooth.mat")
-rcv = load_acoustic_receiver("models/marmousi2-model-smooth.mat")
-## For debug, only run the first source
-# src = [src[1]]
-# rcv = [rcv[1]]
-vp0 = matread("models/marmousi2-model-smooth.mat")["vp"]
+## load model setting
+params = load_params(model_name)
+src = load_acoustic_source(model_name)
+rcv = load_acoustic_receiver(model_name)
+vp0 = matread(model_name)["vp"]
 mean_vp0 = mean(vp0)
 std_vp0 = std(vp0)
+
+## original fwi
 # vp_ = Variable(vp0 / mean_vp0)
 # vp = vp_ * mean_vp0
+# vars = vp_
 
-## add NN
+## fwi with NN
 # nx = params.NX
 # ny = params.NY
 # dx = params.DELTAX
@@ -105,17 +77,15 @@ end
 ## assemble acoustic propagator model
 model = x->AcousticPropagatorSolver(params, x, vp^2)
 vars = get_collection()
-# vars = vp
 
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-    Rs[i] = readdlm(joinpath(output_dir, "marmousi-r$i.txt"))
+    Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
 end
 
-## optimization
+## calculate loss
 if gpu
-  # losses, grads = compute_loss_and_grads_GPU(model, src, rcv, Rs, get_collection())
   losses, grads = compute_loss_and_grads_GPU(model, src, rcv, Rs, vars)
   grad = sum(grads)
   loss = sum(losses)
@@ -124,16 +94,13 @@ else
   loss = sum([sum((rcv[i].rcvv-Rs[i])^2) for i = 1:length(rcv)]) 
 end
 
+opt = AdamOptimizer(0.001).minimize(loss, colocate_gradients_with_ops=true)
 sess = Session(); init(sess)
-@info "Initial loss: ", run(sess, losses)
+@info "Initial loss: ", run(sess, loss)
 
+## run inversion
 function callback(vs, iter, loss)
   if iter%10==0
-    # if gpu
-    #   x = Array(reshape(vs[1:(params.NY+2)*(params.NX+2)], params.NY+2, params.NX+2))
-    # else
-    #   x = vs[1]'
-    # end
     x = run(sess, vp)'
     clf()
     pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  x)
@@ -145,26 +112,25 @@ function callback(vs, iter, loss)
     title("Iteration = $iter")
     savefig(joinpath(figure_dir, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
     writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), x)
-
     open(joinpath(result_dir, "loss.txt"), "a") do io 
       writedlm(io, loss)
     end
-  else
   end
 end
 
+## optimization using Adam
+time = 0
+for iter = 1:10000
+  global time += @elapsed  _, l_ = run(sess, [opt, loss])
+  callback(nothing, iter, l_)
+  println("   $iter\t$l_")
+  println(" * time: $time")
+end 
 
+## optimization using L-BFGS
 if gpu
   LBFGS!(sess, loss, grad, vars; callback=callback)
-  # LBFGS!(sess, loss, grad, vp_; callback=callback)
 else
   LBFGS!(sess, loss, vars=[vars], callback=callback)
 end
 
-
-opt = AdamOptimizer(0.001).minimize(loss)
-init(sess)
-for i = 1:10000
-  _, l_ = run(sess, [opt, loss])
-  @info i, l_ 
-end 

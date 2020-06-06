@@ -1,8 +1,8 @@
 export Generator, sampleUQ
 
-function lrelu(x, th=0.2)
-  return tf.maximum(th * x, x)
-end
+# function lrelu(x, th=0.2)
+#   return tf.maximum(th * x, x)
+# end
 
 # function Generator(x, isTrain=true; vmin=-1, vmax=1)
 #   local o
@@ -39,35 +39,32 @@ end
 
 function Generator(z, isTrain=true; base=4, ratio=1, vmin=nothing, vmax=nothing)
   local o
-  # local model
   variable_scope("generator") do
-      # z = tf.keras.Input(size(z))
-      x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 16)(z)
-      x = tf.reshape(x, shape=[-1, Int(round(base * ratio)), base, 16])
-      x = tf.keras.activations.tanh(x)
+    x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 16)(z)
+    x = tf.reshape(x, shape=[-1, Int(round(base * ratio)), base, 16])
+    x = tf.keras.activations.tanh(x)
 
-      x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
-      x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+    x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
+    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
+    x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
 
-      x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
-      x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+    x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
+    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
+    x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
 
-      x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
-      x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+    x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
+    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
+    x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
 
-      x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
-      o = x
+    x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
+    x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
+    o = x
 
-      if !isnothing(vmax) && !isnothing(vmin)
-          o = (vmax - vmin) * (tf.keras.activations.tanh(x) - (-1))/2 + vmin
-      end
-      o = tf.squeeze(o)
-      # o = cast(o, Float64)
-      # model = tf.keras.Model(inputs=z, outputs=o)
+    if !isnothing(vmax) && !isnothing(vmin)
+        o = (vmax - vmin) * (tf.keras.activations.tanh(x) - (-1))/2 + vmin
+    end
+    o = tf.squeeze(o)
+    # o = cast(o, Float64)
   end
   return o
 end

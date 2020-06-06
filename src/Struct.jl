@@ -13,8 +13,8 @@ export ElasticPropagatorParams, ElasticPropagator, ElasticSource, ElasticReceive
     DELTAT::Float64 = 2.e-3 / 2
 
     # PML boundary conditon 
-    f0::Float64 = 7. # source frequency
-    vp_ref::Float64 = 3300. 
+    f0::Float64 = 5. # source frequency
+    vp_ref::Float64 = 2000. 
     USE_PML_XMIN::Bool = true
     USE_PML_XMAX::Bool = true
     USE_PML_YMIN::Bool = true
@@ -75,7 +75,7 @@ end
     damping_x::Union{Missing,Float64} = missing
     damping_y::Union{Missing,Float64} = missing
     Rcoef::Float64 = 0.001 # Relative reflection coefficient
-    vp_ref::Float64 = 3300. 
+    vp_ref::Float64 = 2000. 
 
     # Auxilliary Data
     Σx::Array{Float64} = []

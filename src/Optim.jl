@@ -130,7 +130,7 @@ function LBFGS!(sess::PyObject, loss::PyObject, grads::Union{Array{T},Nothing,Py
 
     if isa(grads, PyObject); grads = [grads]; end
     if isa(vars, PyObject); vars = [vars]; end
-    if length(grads)!=length(vars); error("ADCME: length of grads and vars do not match"); end
+    if length(grads)!=length(vars); error("Length of grads and vars do not match"); end
 
     idx = ones(Bool, length(grads))
     for i = 1:length(grads)

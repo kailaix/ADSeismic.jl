@@ -5,7 +5,7 @@ export visualize_wavefield, plot_result,
     sampling_compute_loss_and_grads_GPU_v2,
     sampling_compute_loss_and_grads_GPU_v3
 
-function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams}; dirs::String="figures", kwargs...) 
+function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams}; dirs::String="figure", kwargs...) 
     
     if !isdir(dirs)
         dirs="./"
@@ -472,16 +472,13 @@ function sampling_compute_loss_and_grads_GPU_v3(models, src, rcv_sim, Rs; reg::F
 end
 
 function compute_forward_GPU(model::Function, src::Union{Array{AcousticSource},Array{ElasticSource}},
-    rcv_sim::Union{Array{AcousticReceiver}, Array{ElasticReceiver}})
-    if model.param.IT_DISPLAY!=0
-        @warn "To use GPU, IT_DISPLAY must be 0. Setting IT_DISPLAY to 0..."
-        model.param.IT_DISPLAY = 0
-    end
+    rcv::Union{Array{AcousticReceiver}, Array{ElasticReceiver}})
+
     function run_on_gpu_device(gpu_id, jobs)
         local rcvv
         @pywith tf.device("/gpu:$(gpu_id)") begin
-            [SimulatedObservation!(model(src[i]), rcv_sim[i]) for i = jobs]
-            rcvv = [rcv_sim[i].rcvv for i = jobs]
+            [SimulatedObservation!(model(src[i]), rcv[i]) for i = jobs]
+            rcvv = [rcv[i].rcvv for i = jobs]
         end
         return rcvv
     end

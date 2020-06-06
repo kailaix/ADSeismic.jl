@@ -1,4 +1,4 @@
-export Generator
+export Generator, sampleUQ
 
 function lrelu(x, th=0.2)
   return tf.maximum(th * x, x)
@@ -37,47 +37,45 @@ end
 #   return o
 # end
 
-# function Generator(z, isTrain=true; ratio=1, vmin=-1, vmax=1)
-#   local o
-#   local model
-#   variable_scope("generator") do
-#       z = tf.keras.Input(size(z))
-#       x = tf.keras.layers.Dense(units = Int(round(8 * ratio)) * 8 * 16)(z)
-#       x = tf.reshape(x, shape=[-1, Int(round(8 * ratio)), 8, 16])
-#       x = tf.keras.activations.tanh(x)
-#       x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-#       x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
-#       x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
-#       x = tf.keras.layers.UpSampling2D((4, 4), interpolation="bilinear")(x)
-#       x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
-#       # x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
-
-#       o = (vmax - vmin) * (tf.keras.activations.tanh(x) - (-1))/2 + vmin
-#       # o = tf.squeeze(o)
-#       model = tf.keras.Model(inputs=z, outputs=o)
-#   end
-#   return model
-# end
-
-function Generator(z, isTrain=true; ratio=1, vmin=-1, vmax=1)
+function Generator(z, isTrain=true; base=4, ratio=1, vmin=nothing, vmax=nothing)
   local o
   # local model
   variable_scope("generator") do
       # z = tf.keras.Input(size(z))
-      x = tf.keras.layers.Dense(units = Int(round(6 * ratio)) * 6 * 16)(z)
-      x = tf.reshape(x, shape=[-1, Int(round(6 * ratio)), 6, 16])
+      x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 16)(z)
+      x = tf.reshape(x, shape=[-1, Int(round(base * ratio)), base, 16])
       x = tf.keras.activations.tanh(x)
+
       x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
       x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
       x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
-      x = tf.keras.layers.UpSampling2D((4, 4), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
-      # x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
 
-      o = (vmax - vmin) * (tf.keras.activations.tanh(x) - (-1))/2 + vmin
+      x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
+      x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
+      x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+
+      x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
+      x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
+      x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+
+      x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
+      x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
+      o = x
+
+      if !isnothing(vmax) && !isnothing(vmin)
+          o = (vmax - vmin) * (tf.keras.activations.tanh(x) - (-1))/2 + vmin
+      end
       o = tf.squeeze(o)
       # o = cast(o, Float64)
       # model = tf.keras.Model(inputs=z, outputs=o)
   end
   return o
+end
+
+function sampleUQ(batch_size, sample_size, rcv_size; z_size=8, base=4, ratio=1, vmin=nothing, vmax=nothing)
+  isTrain = placeholder(Bool)
+  y = placeholder(Float64, shape=(sample_size, rcv_size...))
+  z = placeholder(Float32, shape=(batch_size, z_size))
+  G_z = cast(Float64, Generator(z, isTrain, base=base, ratio=ratio, vmin=vmin, vmax=vmax))
+  return G_z, isTrain, y, z
 end

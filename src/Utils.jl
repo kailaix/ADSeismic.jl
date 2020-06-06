@@ -1,6 +1,8 @@
-export visualize_wavefield, Ricker, Gauss, compute_default_properties, 
-    gradtest, compute_loss_and_grads_GPU, compute_forward_GPU,
-    variable_source, sampling_compute_loss_and_grads_GPU, sampling_compute_loss_and_grads_GPU_v2,
+export visualize_wavefield, plot_result,
+    Ricker, Gauss, compute_default_properties, 
+    gradtest, compute_loss_and_grads_GPU, compute_forward_GPU, variable_source, 
+    sampling_compute_loss_and_grads_GPU, 
+    sampling_compute_loss_and_grads_GPU_v2,
     sampling_compute_loss_and_grads_GPU_v3
 
 function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams}; dirs::String="figures", kwargs...) 
@@ -31,6 +33,53 @@ function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropaga
     return p
 end
     
+
+function plot_result(sess, var, feed_dict, iter; dirs::String="figures", var_name=nothing)
+
+    if !isdir(dirs)
+        dirs="./"
+    end
+
+    x = run(sess, var, feed_dict=feed_dict)
+
+    std_images = zeros(size(x,2), size(x,3)) * 0
+    for i = 1:size(x,2)
+        for j = 1:size(x, 3)
+            std_images[i,j] = std(x[:, i, j, 1])
+        end
+    end
+
+    figure()
+    imshow(std_images')
+    colorbar(shrink=0.5)
+    title("Iteration = $iter")
+    if isnothing(var_name)
+        savefig(joinpath(dirs, "std_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+    else
+        savefig(joinpath(dirs, "std_$(var_name)_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+    end
+
+    figure()
+    fig, ax = subplots(div(size(x)[1],2), 2)
+    for i = 1:div(size(x)[1],2)
+        for j = 1:2
+            ax[i, j].get_xaxis().set_visible(false)
+            ax[i, j].get_yaxis().set_visible(false)
+            k = (i-1) * 2 + j
+            pcm= ax[i, j].imshow(x[k,:,:]')
+            # fig.colorbar(pcm, ax=ax[i,j])
+        end
+    end
+    subplots_adjust(wspace=0, hspace=0)
+    suptitle("Iteration = $iter")
+    if isnothing(var_name)
+        savefig(joinpath(dirs, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+    else
+        savefig(joinpath(dirs, "inv_$(var_name)_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+    end
+    # writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), vp*scale)
+    close("all")
+end
 
 
 """
@@ -154,10 +203,7 @@ Computes the loss and the gradients of the model on all available GPUs.
 """
 function compute_loss_and_grads_GPU(model::Function, src::Union{Array{AcousticSource},Array{ElasticSource}},
          rcv_sim::Union{Array{AcousticReceiver}, Array{ElasticReceiver}}, Rs::Array{Array{Float64,2},1}, vs::Union{PyObject, Array{PyObject}})
-    # if model.param.IT_DISPLAY!=0
-    #     @warn "To use GPU, IT_DISPLAY must be 0. Setting IT_DISPLAY to 0..."
-    #     model.param.IT_DISPLAY = 0
-    # end
+
     flag = isa(vs, PyObject)
     function run_on_gpu_device(gpu_id, jobs)
         local loss, g
@@ -238,19 +284,12 @@ end
 #     return loss, d
 # end
 
-function sampling_compute_loss_and_grads_GPU(models, src::AcousticSource,
-    rcv_sim::Array{AcousticReceiver}, 
-    Rs::Array{PyObject}, reg::Float64=1.0)
+function sampling_compute_loss_and_grads_GPU(models, src::AcousticSource, rcv_sim::Array{AcousticReceiver}, Rs::Array{PyObject}, reg::Float64=1.0)
+    
     local loss, d
     @show length(models), length(rcv_sim)
     @assert length(models)==length(rcv_sim)
     n_models = length(models)
-    for model in models
-        if model.param.IT_DISPLAY!=0
-            @warn "To use GPU, IT_DISPLAY must be 0. Setting IT_DISPLAY to 0..."
-            model.param.IT_DISPLAY = 0
-        end
-    end
 
     function run_on_gpu_device!(gpu_id, jobs)
         local d
@@ -259,7 +298,7 @@ function sampling_compute_loss_and_grads_GPU(models, src::AcousticSource,
             x = vcat([reshape(rcv_sim[i].rcvv,1,-1) for i in jobs]...)
             y = vcat([reshape(r, 1, -1) for r in Rs]...)
             d = dist(x,y,1)
-            @info size(x), size(y), size(d)
+            # @info size(x), size(y), size(d)
         end
         return d
     end
@@ -289,15 +328,13 @@ end
 
 
 """
-
 - `models` : nsrc * batch_size
 - `src` : nsrc
 - `rcv_sim` : nsrc * batch_size
 - `Rs` : nsrc * sample_size
 """
-function sampling_compute_loss_and_grads_GPU_v2(models, src,
-    rcv_sim, 
-    Rs; reg::Float64=1.0, method::String="sinkhorn")
+function sampling_compute_loss_and_grads_GPU_v2(models, src, rcv_sim,  Rs; reg::Float64=1.0, method::String="sinkhorn")
+    
     local loss
     nsrc, batch_size = size(models)
     @assert nsrc == length(src)
@@ -305,13 +342,6 @@ function sampling_compute_loss_and_grads_GPU_v2(models, src,
     @assert size(rcv_sim,2) == batch_size
     @assert size(Rs,1)==nsrc
     sample_size = size(Rs,2)
-
-    for model in models
-        if model.param.IT_DISPLAY!=0
-            @warn "To use GPU, IT_DISPLAY must be 0. Setting IT_DISPLAY to 0..."
-            model.param.IT_DISPLAY = 0
-        end
-    end
 
     function run_on_gpu_device!(gpu_id, src_ids)
         local ds
@@ -364,6 +394,7 @@ function sampling_compute_loss_and_grads_GPU_v2(models, src,
         end
     end
     return loss
+
 end
 
 
@@ -376,9 +407,8 @@ Mathcing statistics.
 - `rcv_sim` : nsrc * batch_size
 - `Rs` : nsrc * sample_size
 """
-function sampling_compute_loss_and_grads_GPU_v3(models, src,
-    rcv_sim, 
-    Rs; reg::Float64=1.0, method::String="sinkhorn")
+function sampling_compute_loss_and_grads_GPU_v3(models, src, rcv_sim, Rs; reg::Float64=1.0, method::String="sinkhorn")
+    
     local loss
     nsrc, batch_size = size(models)
     @assert nsrc == length(src)
@@ -386,13 +416,6 @@ function sampling_compute_loss_and_grads_GPU_v3(models, src,
     @assert size(rcv_sim,2) == batch_size
     @assert size(Rs,1)==nsrc
     sample_size = size(Rs,2)
-
-    for model in models
-        if model.param.IT_DISPLAY!=0
-            @warn "To use GPU, IT_DISPLAY must be 0. Setting IT_DISPLAY to 0..."
-            model.param.IT_DISPLAY = 0
-        end
-    end
 
     function run_on_gpu_device!(gpu_id, src_ids)
         local ds
@@ -447,8 +470,6 @@ function sampling_compute_loss_and_grads_GPU_v3(models, src,
     end
     return loss
 end
-
-
 
 function compute_forward_GPU(model::Function, src::Union{Array{AcousticSource},Array{ElasticSource}},
     rcv_sim::Union{Array{AcousticReceiver}, Array{ElasticReceiver}})

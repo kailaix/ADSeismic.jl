@@ -88,17 +88,19 @@ std_vp0 = std(vp0)
 # vp = squeeze(fc(z, [10,1])) * mean_vp0
 # vp = reshape(vp, size(vp0))
 z = constant(rand(Float32, 1,8))
-x = Generator(z, ratio=size(vp0)[1]/size(vp0)[2], vmin = -2, vmax = 2)
+x = Generator(z, ratio=size(vp0)[1]/size(vp0)[2], base=4)
 x = tf.cast(x, tf.float64)
 x = x * std_vp0
 vp = constant(vp0[:,:])
-# x = tf.slice(x, (size(x).-size(vp0)).÷2, size(vp0))
-# vp = vp + x
-i = (size(vp0)[1]-size(x)[1])÷2 +1 :(size(vp0)[1]-size(x)[1])÷2 + size(x)[1]
-j = (size(vp0)[2]-size(x)[2])÷2 +1 : (size(vp0)[2]-size(x)[2])÷2 + size(x)[2]
-vp = scatter_add(vp, i, j, x)
-
-# error()
+if size(x) <= size(vp)
+  i = (size(vp0)[1]-size(x)[1])÷2 +1 :(size(vp0)[1]-size(x)[1])÷2 + size(x)[1]
+  j = (size(vp0)[2]-size(x)[2])÷2 +1 : (size(vp0)[2]-size(x)[2])÷2 + size(x)[2]
+  vp = scatter_add(vp, i, j, x)
+elseif  size(x) > size(vp)
+  vp = vp + tf.slice(x, (size(x).-size(vp0)).÷2, size(vp0))
+else
+  error("Size error: ", size(vp), size(x))
+end
 
 ## assemble acoustic propagator model
 model = x->AcousticPropagatorSolver(params, x, vp^2)

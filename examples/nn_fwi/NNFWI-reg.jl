@@ -95,7 +95,7 @@ else
 end
 
 global_step = tf.Variable(0, trainable=false)
-max_iter = 1000
+max_iter = 100000
 lr_decayed = tf.train.cosine_decay(0.001, global_step, max_iter)
 opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
 

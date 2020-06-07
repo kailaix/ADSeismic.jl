@@ -32,7 +32,7 @@ end
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
-batch_size = 5 ## number of models per source
+batch_size = 8 ## number of models per source
 sample_size = 8 ## number of sampled y per source
 model_name = "models/marmousi2-model-smooth.mat"
 
@@ -100,8 +100,8 @@ end
   global loss = sampling_compute_loss_and_grads_GPU_v2(models, variable_src, rcv, Rs_, reg=200.0, method="lp")
 end
 
-lr = 0.01
-optim = AdamOptimizer(lr, beta1=0.5).minimize(loss, colocate_gradients_with_ops=true)
+lr = 0.001
+opt = AdamOptimizer(lr).minimize(loss, colocate_gradients_with_ops=true)
 
 si = zeros(size(si_)...)
 sj = zeros(size(sj_)...)
@@ -132,7 +132,7 @@ sess = Session(); init(sess)
 
 ## run inversion
 losses = []
-σ = 0.1
+σ = 0.01
 fixed_z = randn(Float32, size(z)...)
 time = 0
 for iter = 1:1000
@@ -155,7 +155,7 @@ for iter = 1:1000
       variable_rcv_=>variable_rcv
     )
     
-    global time += ls, _ = run(sess, [loss, optim], feed_dict=dic)
+    global time += @elapsed ls, _ = run(sess, [loss, opt], feed_dict=dic)
     if iter == 1
       global mean_ls = ls
     else

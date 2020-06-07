@@ -86,8 +86,8 @@ end
   global loss, dd = sampling_compute_loss_and_grads_GPU(models, variable_src, rcv, Rs_, 200.0)
 end
 
-lr = 0.01
-optim = AdamOptimizer(lr, beta1=0.5).minimize(loss, colocate_gradients_with_ops=true)
+lr = 0.001
+opt = AdamOptimizer(lr).minimize(loss, colocate_gradients_with_ops=true)
 
 i = rand(1:nsrc)
 dic = Dict(
@@ -104,9 +104,10 @@ sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
 losses = []
-σ = 0.1
+σ = 0.01
 fixed_z = randn(Float32, size(z)...)
-for iter = 1:1000000000
+time = 0
+for iter = 1:10000
     if iter%50==1
       dic = Dict(
         isTrain=>true,
@@ -126,13 +127,15 @@ for iter = 1:1000000000
       variable_rcv_=>Rs[i]
     )
     
-    loss_, _ = run(sess, [loss, optim], feed_dict=dic)
+    global time += @elapsed ls, _ = run(sess, [loss, opt], feed_dict=dic)
     if iter == 1
-      global mean_loss = loss_
+      global mean_ls = ls
     else
-      global mean_loss
-      mean_loss += 1/(iter+1) * (loss_ - mean_loss)
+      global mean_ls
+      mean_ls += 1/(iter+1) * (ls - mean_ls)
     end
-    println("[#$iter] loss = $loss_, mean loss = $mean_loss")
-    push!(losses, loss_)
+    # println("[#$iter] loss = $loss_, mean loss = $mean_loss")
+    println("   $iter\t$ls\t$mean_ls")
+    println(" * time: $time")
+    push!(losses, ls)
 end

@@ -94,7 +94,11 @@ else
   loss = sum([sum((rcv[i].rcvv-Rs[i])^2) for i = 1:length(rcv)]) 
 end
 
-opt = AdamOptimizer(0.001).minimize(loss, colocate_gradients_with_ops=true)
+global_step = tf.Variable(0, trainable=false)
+max_iter = 1000
+lr_decayed = tf.train.cosine_decay(0.001, global_step, max_iter)
+opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
+
 sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss)
 
@@ -120,10 +124,10 @@ end
 
 ## optimization using Adam
 time = 0
-for iter = 1:10000
-  global time += @elapsed  _, l_ = run(sess, [opt, loss])
-  callback(nothing, iter, l_)
-  println("   $iter\t$l_")
+for iter = 1:max_iter
+  global time += @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed])
+  callback(nothing, iter, ls)
+  println("   $iter\t$ls\t$lr")
   println(" * time: $time")
 end 
 

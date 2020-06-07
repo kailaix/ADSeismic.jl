@@ -365,7 +365,7 @@ function sampling_compute_loss_and_grads_GPU_v2(models, src, rcv_sim,  Rs; reg::
             ds = Array{PyObject}(undef, length(src_ids))
             for i = 1:length(src_ids)
                 ds[i] = dist(x[i], y[i], 1)
-                @info ds[i]
+                # @info ds[i]
             end
         end
         return ds

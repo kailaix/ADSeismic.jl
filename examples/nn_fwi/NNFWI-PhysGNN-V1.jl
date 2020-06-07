@@ -48,14 +48,17 @@ vp0 = matread(model_name)["vp"]
 mean_vp0 = mean(vp0)
 std_vp0 = std(vp0)
 vp0 = constant(vp0)
-# vp_ = Variable(vp0 / mean_vp0)
-# vp = vp_ * mean_vp0
 
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
     Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
 end
+
+## original fwi
+# vp_ = Variable(vp0 / mean_vp0)
+# vp = vp_ * mean_vp0
+# vars = vp_
 
 ## add NN
 x, isTrain, y, z = sampleUQ(batch_size, sample_size, (size(src[1].srcv,1)+1,length(rcv[1].rcvi)), 
@@ -86,8 +89,6 @@ end
 lr = 0.01
 optim = AdamOptimizer(lr, beta1=0.5).minimize(loss, colocate_gradients_with_ops=true)
 
-sess = Session(); init(sess)
-
 i = rand(1:nsrc)
 dic = Dict(
   isTrain=>true,
@@ -98,6 +99,8 @@ dic = Dict(
   sv_=>src[i].srcv,
   variable_rcv_=>Rs[i]
 )
+
+sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
 losses = []
@@ -132,5 +135,4 @@ for iter = 1:1000000000
     end
     println("[#$iter] loss = $loss_, mean loss = $mean_loss")
     push!(losses, loss_)
-
 end

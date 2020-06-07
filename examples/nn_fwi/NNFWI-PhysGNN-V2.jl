@@ -8,7 +8,6 @@ using DelimitedFiles
 # matplotlib.use("Agg")
 close("all")
 if has_gpu()
-  use_gpu()
   gpu = true
 else
   gpu = false
@@ -19,11 +18,11 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/acoustic/marmousi/"
+figure_dir = "figure/PhysGNN_V2/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/acoustic/marmousi/"
+result_dir = "result/PhysGNN_V2/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
@@ -53,8 +52,6 @@ vp0 = matread(model_name)["vp"]
 mean_vp0 = mean(vp0)
 std_vp0 = std(vp0)
 vp0 = constant(vp0)
-# vp_ = Variable(vp0 / mean_vp0)
-# vp = vp_ * mean_vp0
 
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
@@ -62,10 +59,16 @@ for i = 1:length(src)
     Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
 end
 
+## original fwi
+# vp_ = Variable(vp0 / mean_vp0)
+# vp = vp_ * mean_vp0
+# vars = vp_
+
 ## add NN
 x, isTrain, y, z = sampleUQ(batch_size, sample_size, (size(src[1].srcv,1)+1,length(rcv[1].rcvi)), 
                             z_size=8, base=4, ratio=size(vp0)[1]/size(vp0)[2]) 
 x = x * std_vp0
+vp = vp0 + tf.slice(x, (size(x).-(size(x)[1], size(vp0)...)).÷2, (size(x)[1], size(vp0)...))
 
 ## assemble acoustic propagator model
 # model = x->AcousticPropagatorSolver(params, x, vp^2)
@@ -113,7 +116,6 @@ for i = 1:nsrc
   variable_rcv[i,:,:] = Rs[i]
 end
 
-sess = Session(); init(sess)
 dic = Dict(
   isTrain=>true,
   z=>rand(Float32, size(z)...),
@@ -123,34 +125,45 @@ dic = Dict(
   sv_=>sv,
   variable_rcv_=>variable_rcv
 )
+
+sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
 
 ## run inversion
 losses = []
-σ = 0.0
-for iter = 1:1000000000
+σ = 0.1
+fixed_z = randn(Float32, size(z)...)
+time = 0
+for iter = 1:1000
     if iter%10==1
-      # show_result("figures/$(iter)", G_z)
+      dic = Dict(
+        isTrain=>true,
+        z=>fixed_z
+      )
+      plot_result(sess, x, dic, iter, dirs=figure_dir, var_name="x")
+      plot_result(sess, vp, dic, iter, dirs=figure_dir, var_name="vp")
     end
 
     dic = Dict(
       isTrain=>true,
       z=>rand(Float32, size(z)...),
-      y=>randn(size(y)...),
+      y=>randn(size(y)...) .* σ .* [std(Rs[i]) for i = 1:nsrc],
       si_=>si,
       sj_=>sj,
       sv_=>sv,
       variable_rcv_=>variable_rcv
     )
     
-    loss_, _ = run(sess, [loss, optim], feed_dict=dic)
+    global time += ls, _ = run(sess, [loss, optim], feed_dict=dic)
     if iter == 1
-      global mean_loss = loss_
+      global mean_ls = ls
     else
-      global mean_loss
-      mean_loss += 1/(iter+1) * (loss_ - mean_loss)
+      global mean_ls
+      mean_ls += 1/(iter+1) * (ls - mean_ls)
     end
-    println("[#$iter] loss = $loss_, mean loss = $mean_loss")
-    push!(losses, loss_)
+    # println("[#$iter] loss = $loss_, mean loss = $mean_ls")
+    println("   $iter\t$ls\t$mean_ls")
+    println(" * time: $time")
+    push!(losses, ls)
 end

@@ -4,6 +4,7 @@ using ADCME
 using PyPlot
 using MAT
 using DelimitedFiles
+using Random
 # matplotlib.use("Agg")
 close("all")
 if has_gpu()
@@ -44,11 +45,12 @@ vp = Variable(vp0)
 model = x->AcousticPropagatorSolver(params, x, vp^2)
 
 ## load data
-std_noise = 1
+std_noise = 2
+Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
     Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt")) 
-    Rs[i] .+= ( randn(size(Rs[i])) .+ mean(Rs[i]) ) .* std(Rs[i]) .*std_noise
+    Rs[i] .+= ( randn(size(Rs[i])) .+ mean(Rs[i]) ) .* std(Rs[i]) .* std_noise
 end
 
 ## calculate loss

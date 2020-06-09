@@ -92,7 +92,7 @@ opt = AdamOptimizer(lr).minimize(loss, colocate_gradients_with_ops=true)
 i = rand(1:nsrc)
 dic = Dict(
   isTrain=>true,
-  z=>randn(Float32, size(z)...),
+  z=>rand(Float32, size(z)...),
   y=>randn(size(y)...),
   si_=>src[i].srci,
   sj_=>src[i].srcj,
@@ -104,10 +104,11 @@ sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
 losses = []
-σ = 0.01
-fixed_z = randn(Float32, size(z)...)
+σ = 0.05
+fixed_z = rand(Float32, size(z)...)
 time = 0
-for iter = 1:10000
+std_Rs = [std(Rs[i]) for i = 1:nsrc]
+for iter = 1:100000
     if iter%50==1
       dic = Dict(
         isTrain=>true,
@@ -117,10 +118,11 @@ for iter = 1:10000
       plot_result(sess, vp, dic, iter, dirs=figure_dir, var_name="vp")
     end
 
+    i = rand(1:nsrc)
     dic = Dict(
       isTrain=>true,
-      z=>randn(Float32, size(z)...),
-      y=>randn(size(y)...) * σ * std(Rs[i]),
+      z=>rand(Float32, size(z)...),
+      y=>randn(size(y)...) * σ * std_Rs[i],
       si_=>src[i].srci,
       sj_=>src[i].srcj,
       sv_=>src[i].srcv,

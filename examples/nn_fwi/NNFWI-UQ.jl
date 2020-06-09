@@ -17,11 +17,11 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/acoustic/reg2/"
+figure_dir = "figure/acoustic/UQ/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/acoustic/reg2/"
+result_dir = "result/acoustic/UQ/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
@@ -59,8 +59,9 @@ std_vp0 = std(vp0)
 # end 
 # vp = squeeze(fc(z, [10,1])) * mean_vp0
 # vp = reshape(vp, size(vp0))
+isTrain = placeholder(Bool)
 z = constant(rand(Float32, 1,8))
-x = Generator(z, ratio=size(vp0)[1]/size(vp0)[2], base=4)
+x = Generator(z, isTrain, ratio=size(vp0)[1]/size(vp0)[2], base=4)
 x = tf.cast(x, tf.float64)
 x = x * std_vp0
 vp = constant(vp0[:,:])
@@ -100,14 +101,14 @@ lr_decayed = tf.train.cosine_decay(0.001, global_step, max_iter)
 opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
 
 sess = Session(); init(sess)
-@info "Initial loss: ", run(sess, loss)
+@info "Initial loss: ", run(sess, loss, feed_dict=Dict(isTrain=>true))
 
 ## run inversion
 function callback(vs, iter, loss)
-  if iter%10==0
-    x = run(sess, vp)'
+  if iter%10==1
+    x = run(sess, vp, feed_dict=Dict(isTrain=>false))
     clf()
-    pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  x)
+    pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  x')
     axis("scaled")
     colorbar(shrink=0.4)
     xlabel("x (km)")
@@ -115,17 +116,29 @@ function callback(vs, iter, loss)
     gca().invert_yaxis()
     title("Iteration = $iter")
     savefig(joinpath(figure_dir, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
-    writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), x)
+    writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), x')
     open(joinpath(result_dir, "loss.txt"), "a") do io 
       writedlm(io, loss)
     end
+
+    vp_std = std([run(sess, vp, feed_dict=Dict(isTrain=>true)) for i = 1:100])
+    clf()
+    pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  vp_std')
+    axis("scaled")
+    colorbar(shrink=0.4)
+    xlabel("x (km)")
+    ylabel("z (km)")
+    gca().invert_yaxis()
+    title("Iteration = $iter")
+    savefig(joinpath(figure_dir, "std_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+    writedlm(joinpath(result_dir, "std_$(lpad(iter,5,"0")).txt"), vp_std')
   end
 end
 
 ## optimization using Adam
 time = 0
 for iter = 1:max_iter
-  global time += @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed])
+  global time += @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed], feed_dict=Dict(isTrain=>true))
   callback(nothing, iter, ls)
   println("   $iter\t$ls\t$lr")
   println(" * time: $time")

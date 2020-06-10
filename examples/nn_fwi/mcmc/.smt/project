@@ -1,0 +1,42 @@
+{
+  "name": "mcmc",
+  "default_executable": {
+    "type": "sumatra.programs.JuliaExecutable",
+    "path": "/home/kailaix/julia-1.4.1/bin/julia",
+    "version": "1.4.1",
+    "options": "",
+    "name": "Julia"
+  },
+  "default_repository": {
+    "type": "sumatra.versioncontrol._git.GitRepository",
+    "url": "/home/kailaix/project/ADSeismic.jl",
+    "upstream": "https://github.com/kailaix/ADSeismic.jl.git"
+  },
+  "default_launch_mode": {
+    "type": "sumatra.launch.SerialLaunchMode",
+    "working_directory": "/home/kailaix/project/ADSeismic.jl/examples/nn_fwi/mcmc",
+    "options": null
+  },
+  "data_store": {
+    "type": "sumatra.datastore.filesystem.FileSystemDataStore",
+    "root": "/home/kailaix/project/ADSeismic.jl/examples/nn_fwi/mcmc/Data"
+  },
+  "record_store": {
+    "type": "sumatra.recordstore.django_store.DjangoRecordStore",
+    "db_file": "/home/kailaix/project/ADSeismic.jl/examples/nn_fwi/mcmc/.smt/records"
+  },
+  "default_main_file": null,
+  "on_changed": "store-diff",
+  "description": "",
+  "data_label": "cmdline",
+  "_most_recent": null,
+  "input_datastore": {
+    "type": "sumatra.datastore.filesystem.FileSystemDataStore",
+    "root": "/"
+  },
+  "label_generator": "timestamp",
+  "timestamp_format": "%Y%m%d-%H%M%S",
+  "sumatra_version": "0.8dev",
+  "allow_command_line_parameters": true,
+  "plugins": []
+}

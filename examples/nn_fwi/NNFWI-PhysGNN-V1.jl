@@ -104,7 +104,7 @@ sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
 losses = []
-σ = 0.05
+σ = 1 #0.05
 fixed_z = rand(Float32, size(z)...)
 time = 0
 std_Rs = [std(Rs[i]) for i = 1:nsrc]
@@ -116,6 +116,7 @@ for iter = 1:100000
       )
       plot_result(sess, x, dic, iter, dirs=figure_dir, var_name="x")
       plot_result(sess, vp, dic, iter, dirs=figure_dir, var_name="vp")
+      ADCME.save(sess, joinpath(result_dir, "NNFWI-PhysGNN-V1.mat"))
     end
 
     i = rand(1:nsrc)

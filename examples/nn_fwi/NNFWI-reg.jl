@@ -17,11 +17,11 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/acoustic/reg2/"
+figure_dir = "figure/acoustic/reg/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/acoustic/reg2/"
+result_dir = "result/acoustic/reg/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
@@ -79,9 +79,12 @@ model = x->AcousticPropagatorSolver(params, x, vp^2)
 vars = get_collection()
 
 ## load data
+std_noise = 0
+Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
     Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    Rs[i] .+= randn(size(Rs[i])) .* std(Rs[i]) .* std_noise
 end
 
 ## calculate loss
@@ -104,7 +107,7 @@ sess = Session(); init(sess)
 
 ## run inversion
 function callback(vs, iter, loss)
-  if iter%10==0
+  if iter%10==1
     x = run(sess, vp)'
     clf()
     pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  x)
@@ -119,6 +122,7 @@ function callback(vs, iter, loss)
     open(joinpath(result_dir, "loss.txt"), "a") do io 
       writedlm(io, loss)
     end
+    ADCME.save(sess, joinpath(result_dir, "NNFWI-reg.mat"))
   end
 end
 

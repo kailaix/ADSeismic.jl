@@ -60,8 +60,9 @@ std_vp0 = std(vp0)
 # vp = squeeze(fc(z, [10,1])) * mean_vp0
 # vp = reshape(vp, size(vp0))
 isTrain = placeholder(Bool)
+dropout_rate=0.3
 z = constant(rand(Float32, 1,8))
-x = Generator(z, isTrain, ratio=size(vp0)[1]/size(vp0)[2], base=4)
+x = Generator(z, isTrain, dropout_rate, ratio=size(vp0)[1]/size(vp0)[2], base=4)
 x = tf.cast(x, tf.float64)
 x = x * std_vp0
 vp = constant(vp0[:,:])
@@ -80,9 +81,12 @@ model = x->AcousticPropagatorSolver(params, x, vp^2)
 vars = get_collection()
 
 ## load data
+std_noise = 0
+Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
     Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    Rs[i] .+= randn(size(Rs[i])) .* std(Rs[i]) .* std_noise
 end
 
 ## calculate loss
@@ -120,6 +124,7 @@ function callback(vs, iter, loss)
     open(joinpath(result_dir, "loss.txt"), "a") do io 
       writedlm(io, loss)
     end
+    ADCME.save(sess, joinpath(result_dir, "NNFWI-UQ.mat"))
 
     vp_std = std([run(sess, vp, feed_dict=Dict(isTrain=>true)) for i = 1:100])
     clf()

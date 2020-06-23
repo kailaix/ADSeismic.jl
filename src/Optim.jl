@@ -1,5 +1,12 @@
-export LBFGS!
+export LBFGS!, gradients_GPU
+using Random
 
+function gradients_GPU(loss::PyObject, vars = missing;use_locking::Bool = false, kwargs...)
+    opt = tf.train.Optimizer(use_locking, "default_"*randstring(8))
+    vars = coalesce(vars, get_collection())
+    grads = opt.compute_gradients(loss, vars, colocate_gradients_with_ops=true)
+    [x[1] for x in grads]
+end
 
 @doc raw"""
     LBFGS!(sess::PyObject, loss::PyObject, max_iter::Int64=15000; 

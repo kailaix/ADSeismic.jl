@@ -69,7 +69,7 @@ function Generator(z, isTrain=true; base=4, ratio=1, vmin=nothing, vmax=nothing)
   return o
 end
 
-function Generator(z, isTrain=true, dropout_rate=0.3; base=4, ratio=1, vmin=nothing, vmax=nothing)
+function Generator(z, isTrain, dropout_rate; base=4, ratio=1, vmin=nothing, vmax=nothing)
   local o
   variable_scope("generator") do
     x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 16)(z)

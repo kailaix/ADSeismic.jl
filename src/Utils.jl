@@ -3,7 +3,18 @@ export visualize_wavefield, plot_result,
     gradtest, compute_loss_and_grads_GPU, compute_forward_GPU, variable_source, 
     sampling_compute_loss_and_grads_GPU, 
     sampling_compute_loss_and_grads_GPU_v2,
-    sampling_compute_loss_and_grads_GPU_v3
+    sampling_compute_loss_and_grads_GPU_v3,
+    visualize_model
+
+function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorParams,AcousticPropagatorParams})
+    clf()
+    pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  Array(vp'))
+    axis("scaled")
+    colorbar(shrink=0.4)
+    xlabel("x (km)")
+    ylabel("z (km)")
+    gca().invert_yaxis()
+end
 
 function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams}; dirs::String="figure", kwargs...) 
     
@@ -228,6 +239,7 @@ function compute_loss_and_grads_GPU(model::Function, src::Union{Array{AcousticSo
         println("GPU $i --> sources $jobs")
         losses[i], gs[i] = run_on_gpu_device(i-1, jobs)
     end
+    gs = [gradients_GPU(x) for x in losses]
     return losses, gs
 end
 

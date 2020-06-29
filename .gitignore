@@ -24,3 +24,4 @@ docs/build
 test/figure
 test/.ipynb_checkpoints/
 !deps/build.jl
+System Volume Information

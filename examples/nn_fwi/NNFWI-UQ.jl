@@ -25,6 +25,10 @@ result_dir = "result/acoustic/UQ/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
+model_dir = "model/acoustic/UQ/"
+if !ispath(model_dir)
+  mkpath(model_dir)
+end
 # if isfile(joinpath(result_dir, "loss.txt"))
 #   rm(joinpath(result_dir, "loss.txt"))
 # end
@@ -61,6 +65,7 @@ std_vp0 = std(vp0)
 # vp = reshape(vp, size(vp0))
 isTrain = placeholder(Bool)
 dropout_rate=0.3
+Random.seed!(0);
 z = constant(rand(Float32, 1,8))
 x = Generator(z, isTrain, dropout_rate, ratio=size(vp0)[1]/size(vp0)[2], base=4)
 x = tf.cast(x, tf.float64)
@@ -124,7 +129,6 @@ function callback(vs, iter, loss)
     open(joinpath(result_dir, "loss.txt"), "a") do io 
       writedlm(io, loss)
     end
-    ADCME.save(sess, joinpath(result_dir, "NNFWI-UQ.mat"))
 
     vp_std = std([run(sess, vp, feed_dict=Dict(isTrain=>true)) for i = 1:100])
     clf()
@@ -138,6 +142,11 @@ function callback(vs, iter, loss)
     savefig(joinpath(figure_dir, "std_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
     writedlm(joinpath(result_dir, "std_$(lpad(iter,5,"0")).txt"), vp_std')
   end
+
+  if iter%1000 == 1
+    ADCME.save(sess, joinpath(model_dir, "NNFWI_UQ_$(lpad(iter,5,"0")).mat"))
+  end
+
 end
 
 ## optimization using Adam

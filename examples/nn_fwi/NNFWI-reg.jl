@@ -3,12 +3,15 @@ using ADSeismic
 using ADCME
 using MAT
 using PyPlot
+using Random
 using DelimitedFiles
-using LineSearches
+using Optim
+# using LineSearches
 # matplotlib.use("Agg")
 close("all")
 if has_gpu()
   gpu = true
+  # use_gpu()
 else
   gpu = false
 end
@@ -25,6 +28,10 @@ result_dir = "result/acoustic/reg/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
+model_dir = "model/acoustic/reg/"
+if !ispath(model_dir)
+  mkpath(model_dir)
+end
 # if isfile(joinpath(result_dir, "loss.txt"))
 #   rm(joinpath(result_dir, "loss.txt"))
 # end
@@ -35,6 +42,7 @@ model_name = "models/marmousi2-model-smooth.mat"
 
 ## load model setting
 params = load_params(model_name)
+# params.NSTEP = 2
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
 vp0 = matread(model_name)["vp"]
@@ -59,6 +67,7 @@ std_vp0 = std(vp0)
 # end 
 # vp = squeeze(fc(z, [10,1])) * mean_vp0
 # vp = reshape(vp, size(vp0))
+Random.seed!(0);
 z = constant(rand(Float32, 1,8))
 x = Generator(z, ratio=size(vp0)[1]/size(vp0)[2], base=4)
 x = tf.cast(x, tf.float64)
@@ -122,10 +131,15 @@ function callback(vs, iter, loss)
     open(joinpath(result_dir, "loss.txt"), "a") do io 
       writedlm(io, loss)
     end
-    ADCME.save(sess, joinpath(result_dir, "NNFWI-reg.mat"))
+  end
+  if iter%1000 == 1
+    ADCME.save(sess, joinpath(model_dir, "NNFWI_$(lpad(iter,5,"0")).mat"))
   end
 end
 
+
+# @time Optimize!(sess, loss, vars=vars, grads=grad,  callback=callback)
+# error()
 ## optimization using Adam
 time = 0
 for iter = 1:max_iter

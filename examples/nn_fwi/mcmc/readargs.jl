@@ -9,7 +9,7 @@ function parse_commandline()
             default = 0.002
             arg_type = Float64
         "--nsim"
-            default = 5000
+            default = 10
             arg_type = Int64
         "label"
             default = "nothing"

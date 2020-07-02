@@ -1,4 +1,4 @@
-export visualize_wavefield, plot_result,
+export visualize_wavefield, plot_result, add_initial_model,
     Ricker, Gauss, compute_default_properties, 
     gradtest, compute_loss_and_grads_GPU, compute_forward_GPU, variable_source, 
     sampling_compute_loss_and_grads_GPU, 
@@ -92,6 +92,30 @@ function plot_result(sess, var, feed_dict, iter; dirs::String="figures", var_nam
     close("all")
 end
 
+
+function add_initial_model(x, v)
+    if ndims(x) == 3
+        size_x = size(x)[2:3]
+    else
+        size_x = size(x)
+    end
+    if size_x <= size(v)
+        i = (size(v)[1]-size_x[1])÷2 +1 :(size(v)[1]-size_x[1])÷2 + size_x[1]
+        j = (size(v)[2]-size_x[2])÷2 +1 : (size(v)[2]-size_x[2])÷2 + size_x[2]
+        if ndims(x) == 3
+        v = stack([scatter_add(v, i, j, x[k]) for k in 1:size(x)[1]])
+        else
+        v = scatter_add(v, i, j, x)
+        end
+        @warn "size(x) <= size(vp)", size_x, size(v)
+    elseif  size_x > size(v)
+        v = v + tf.slice(x, (size(x).-(size(x)[1], size(v)...)).÷2, (size(x)[1], size(v)...))
+        @warn "size(x) > size(vp)", size_x, size(v)
+    else
+        error("Size error: ", size(v), size_x)
+    end
+    return v
+end
 
 """
     Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams}, 
@@ -239,7 +263,7 @@ function compute_loss_and_grads_GPU(model::Function, src::Union{Array{AcousticSo
         println("GPU $i --> sources $jobs")
         losses[i], gs[i] = run_on_gpu_device(i-1, jobs)
     end
-    gs = [gradients_GPU(x) for x in losses]
+    # gs = [gradients_GPU(x) for x in losses]
     return losses, gs
 end
 

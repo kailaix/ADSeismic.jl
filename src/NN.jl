@@ -49,7 +49,7 @@ function Generator(z, isTrain=true; base=4, ratio=1, vmin=nothing, vmax=nothing)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
+    x = tf.keras.layers.Conv2D(64, [4, 4], strides=(1, 1), padding="same")(x)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)

@@ -17,23 +17,29 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/PhysGNN_V1/"
+figure_dir = "figure/PhysGNN/BP/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/PhysGNN_V1/"
+result_dir = "result/PhysGNN/BP/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
-# if isfile(joinpath(result_dir, "loss.txt"))
-#   rm(joinpath(result_dir, "loss.txt"))
-# end
+model_dir = "model/PhysGNN/BP/"
+if !ispath(model_dir)
+  mkpath(model_dir)
+end
+if isfile(joinpath(result_dir, "loss.txt"))
+  rm(joinpath(result_dir, "loss.txt"))
+end
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
 batch_size = 8 ## number of models per source
 sample_size = 8 ## number of sampled y per source
-model_name = "models/marmousi2-model-smooth.mat"
+# model_name = "models/marmousi2-model-smooth.mat"
+model_name = "models/BP-model-smooth.mat"
+
 
 ## load model
 params = load_params(model_name)
@@ -52,7 +58,8 @@ vp0 = constant(vp0)
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-    Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    # Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
 end
 
 ## original fwi
@@ -64,13 +71,15 @@ end
 x, isTrain, y, z = sampleUQ(batch_size, sample_size, (size(src[1].srcv,1)+1,length(rcv[1].rcvi)), 
                             z_size=8, base=4, ratio=size(vp0)[1]/size(vp0)[2]) 
 x = x * std_vp0
-vp = vp0 + tf.slice(x, (size(x).-(size(x)[1], size(vp0)...)).÷2, (size(x)[1], size(vp0)...))
+# vp = vp0 + tf.slice(x, (size(x).-(size(x)[1], size(vp0)...)).÷2, (size(x)[1], size(vp0)...))
+vp_ckpt = add_initial_model(x, vp0)
 
 ## assemble acoustic propagator model
 # model = x->AcousticPropagatorSolver(params, x, vp^2)
+
 models = Array{Any}(undef, batch_size)
 for i = 1:batch_size
-  vp = vp0 + tf.slice(x[i], (size(x[i]).-size(vp0)).÷2, size(vp0))
+  vp = add_initial_model(x[i], vp0)
   models[i] = x->AcousticPropagatorSolver(params, x, vp^2)
 end
 
@@ -86,8 +95,10 @@ end
   global loss, dd = sampling_compute_loss_and_grads_GPU(models, variable_src, rcv, Rs_, 200.0)
 end
 
-lr = 0.001
-opt = AdamOptimizer(lr).minimize(loss, colocate_gradients_with_ops=true)
+global_step = tf.Variable(0, trainable=false)
+max_iter = 50000
+lr_decayed = tf.train.cosine_decay(0.001, global_step, max_iter)
+opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
 
 i = rand(1:nsrc)
 dic = Dict(
@@ -104,19 +115,22 @@ sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss, feed_dict=dic)
 
 losses = []
-σ = 1 #0.05
+σ = 0 #0.05
 fixed_z = rand(Float32, size(z)...)
 time = 0
 std_Rs = [std(Rs[i]) for i = 1:nsrc]
-for iter = 1:100000
+for iter = 1:max_iter
     if iter%50==1
       dic = Dict(
         isTrain=>true,
         z=>fixed_z
       )
-      plot_result(sess, x, dic, iter, dirs=figure_dir, var_name="x")
-      plot_result(sess, vp, dic, iter, dirs=figure_dir, var_name="vp")
-      ADCME.save(sess, joinpath(result_dir, "NNFWI-PhysGNN-V1.mat"))
+      # plot_result(sess, x, dic, iter, dirs=figure_dir, var_name="x")
+      plot_result(sess, vp_ckpt, dic, iter, dirs=figure_dir, var_name="vp")
+    end
+
+    if iter%1000 == 1
+      ADCME.save(sess, joinpath(model_dir, "PhysGNN_$(lpad(iter,5,"0")).mat"))
     end
 
     i = rand(1:nsrc)

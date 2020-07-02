@@ -1,3 +1,4 @@
+ENV["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 using Revise
 using ADSeismic
 using ADCME
@@ -18,7 +19,8 @@ if !ispath(output_dir)
 end
 
 ################### Generate synthetic data #####################
-model_name = "models/marmousi2-model-true.mat"
+# model_name = "models/marmousi2-model-true.mat"
+model_name = "models/BP-model-true.mat"
 
 ## load model setting
 params = load_params(model_name)
@@ -44,7 +46,8 @@ Rs = run(sess, Rs_)
 
 ## save results
 for i = 1:length(src)
-    writedlm(joinpath(output_dir, "marmousi-r$i.txt"), Rs[i])
+    # writedlm(joinpath(output_dir, "marmousi-r$i.txt"), Rs[i])
+    writedlm(joinpath(output_dir, "BP-r$i.txt"), Rs[i])
 end
 
 ## visualize_wavefield if needed

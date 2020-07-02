@@ -1,8 +1,10 @@
+ENV["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
 using Revise
 using ADSeismic
 using ADCME
 using PyPlot
 using MAT
+using Optim
 using DelimitedFiles
 # matplotlib.use("Agg")
 close("all")
@@ -16,21 +18,21 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/acoustic/marmousi/"
+figure_dir = "figure/FWI/BP/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/acoustic/marmousi/"
+result_dir = "result/FWI/BP/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
-# if isfile(joinpath(result_dir, "loss.txt"))
-#   rm(joinpath(result_dir, "loss.txt"))
-# end
+if isfile(joinpath(result_dir, "loss.txt"))
+  rm(joinpath(result_dir, "loss.txt"))
+end
 
 
 ################### Inversion using Automatic Differentiation #####################
-model_name = "models/marmousi2-model-smooth.mat"
+model_name = "models/BP-model-smooth.mat"
 
 ## load model setting
 params = load_params(model_name)
@@ -44,7 +46,7 @@ model = x->AcousticPropagatorSolver(params, x, vp^2)
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-    Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
 end
 
 ## calculate loss
@@ -56,6 +58,11 @@ else
   [SimulatedObservation!(model(src[i]), rcv[i]) for i = 1:length(src)]
   loss = sum([sum((rcv[i].rcvv-Rs[i])^2) for i = 1:length(rcv)]) 
 end
+
+global_step = tf.Variable(0, trainable=false)
+max_iter = 50000
+lr_decayed = tf.train.cosine_decay(1.0, global_step, max_iter)
+opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
 
 sess = Session(); init(sess)
 @info "Initial loss: ", run(sess, loss)
@@ -84,8 +91,16 @@ function callback(vs, iter, loss)
   end
 end
 
-if gpu
-  LBFGS!(sess, loss, grad, vp; callback=callback)
-else
-  LBFGS!(sess, loss, vars=[vp], callback=callback)
-end
+
+## BFGS
+Optimize!(sess, loss, 10000, vars=[vp], grads=grad,  callback=callback)
+
+## ADAM
+# time = 0
+# for iter = 0:max_iter
+#   global time += @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed])
+#   callback(run(sess, vp)', iter, ls)
+#   println("   $iter\t$ls\t$lr")
+#   println(" * time: $time")
+# end
+

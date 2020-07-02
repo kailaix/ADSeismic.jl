@@ -132,7 +132,7 @@ for i in 1:n
   if mod(i, 100)==1
     writedlm("Data/UQ_VP.txt", results[1:i,:])
   end
-  @info i, "time consumed:", time() - t0
+  # @info i, "time consumed:", time() - t0
   @info i, "accept rate:", num_accept/i, "prob_v:", exp(prob_v)
   @info "exp(prob_x - prob_v)", exp(prob_x - prob_v)
 end

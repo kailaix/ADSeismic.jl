@@ -103,13 +103,17 @@ function add_initial_model(x, v)
         i = (size(v)[1]-size_x[1])÷2 +1 :(size(v)[1]-size_x[1])÷2 + size_x[1]
         j = (size(v)[2]-size_x[2])÷2 +1 : (size(v)[2]-size_x[2])÷2 + size_x[2]
         if ndims(x) == 3
-        v = stack([scatter_add(v, i, j, x[k]) for k in 1:size(x)[1]])
+            v = stack([scatter_add(v, i, j, x[k]) for k in 1:size(x)[1]])
         else
-        v = scatter_add(v, i, j, x)
+            v = scatter_add(v, i, j, x)
         end
         @warn "size(x) <= size(vp)", size_x, size(v)
     elseif  size_x > size(v)
-        v = v + tf.slice(x, (size(x).-(size(x)[1], size(v)...)).÷2, (size(x)[1], size(v)...))
+        if ndims(x) == 3
+            v = v + tf.slice(x, (size(x).-(size(x)[1], size(v)...)).÷2, (size(x)[1], size(v)...))
+        else
+            v = v + tf.slice(x, (size(x).-size(v)).÷2, size(v))
+        end
         @warn "size(x) > size(vp)", size_x, size(v)
     else
         error("Size error: ", size(v), size_x)

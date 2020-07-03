@@ -5,6 +5,7 @@ using ADCME
 using PyPlot
 using MAT
 using Optim
+using Random
 using DelimitedFiles
 # matplotlib.use("Agg")
 close("all")
@@ -18,11 +19,11 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/FWI/BP/"
+figure_dir = "figure/FWI/marmousi_noise1/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/FWI/BP/"
+result_dir = "result/FWI/marmousi_noise1/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
@@ -32,7 +33,8 @@ end
 
 
 ################### Inversion using Automatic Differentiation #####################
-model_name = "models/BP-model-smooth.mat"
+model_name = "models/marmousi2-model-smooth.mat"
+# model_name = "models/BP-model-smooth.mat"
 
 ## load model setting
 params = load_params(model_name)
@@ -44,9 +46,13 @@ vp = Variable(matread(model_name)["vp"])
 model = x->AcousticPropagatorSolver(params, x, vp^2)
 
 ## load data
+std_noise = 1
+Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-    Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
+    Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    # Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
+    Rs[i] .+= ( randn(size(Rs[i])) .+ mean(Rs[i]) ) .* std(Rs[i]) .* std_noise
 end
 
 ## calculate loss

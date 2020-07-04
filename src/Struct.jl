@@ -75,7 +75,7 @@ end
     damping_x::Union{Missing,Float64} = missing
     damping_y::Union{Missing,Float64} = missing
     Rcoef::Float64 = 0.001 # Relative reflection coefficient
-    vp_ref::Float64 = 2000. 
+    vp_ref::Float64 = 1000. 
 
     # Auxilliary Data
     Σx::Array{Float64} = []

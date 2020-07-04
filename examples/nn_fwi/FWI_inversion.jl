@@ -7,7 +7,7 @@ using MAT
 using Optim
 using Random
 using DelimitedFiles
-# matplotlib.use("Agg")
+matplotlib.use("Agg")
 close("all")
 if has_gpu()
   gpu = true
@@ -19,11 +19,11 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/FWI/marmousi_noise1/"
+figure_dir = "figure/FWI/marmousi/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/FWI/marmousi_noise1/"
+result_dir = "result/FWI/marmousi/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
@@ -46,7 +46,7 @@ vp = Variable(matread(model_name)["vp"])
 model = x->AcousticPropagatorSolver(params, x, vp^2)
 
 ## load data
-std_noise = 1
+std_noise = 0
 Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)

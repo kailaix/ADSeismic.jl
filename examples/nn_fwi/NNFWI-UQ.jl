@@ -26,7 +26,7 @@ result_dir = "result/NNFWI/marmousi_UQ/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
-model_dir = "model/NNFWI/marmousi_UQ/"
+model_dir = "NN_model/NNFWI/marmousi_UQ/"
 if !ispath(model_dir)
   mkpath(model_dir)
 end

@@ -7,8 +7,7 @@ using PyPlot
 using Random
 using DelimitedFiles
 using Optim
-# using LineSearches
-# matplotlib.use("Agg")
+matplotlib.use("Agg")
 close("all")
 if has_gpu()
   gpu = true
@@ -21,15 +20,15 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/NNFWI/BP/"
+figure_dir = "figure/NNFWI/marmousi/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/NNFWI/BP/"
+result_dir = "result/NNFWI/marmousi/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
-model_dir = "model/NNFWI/BP/"
+model_dir = "NN_model/NNFWI/marmousi/"
 if !ispath(model_dir)
   mkpath(model_dir)
 end
@@ -39,8 +38,8 @@ end
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
-# model_name = "models/marmousi2-model-smooth.mat"
-model_name = "models/BP-model-smooth.mat"
+model_name = "models/marmousi2-model-smooth.mat"
+# model_name = "models/BP-model-smooth.mat"
 
 ## load model setting
 params = load_params(model_name)
@@ -86,8 +85,8 @@ std_noise = 0
 Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-  # Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
-    Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
+  Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    # Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
     Rs[i] .+= randn(size(Rs[i])) .* std(Rs[i]) .* std_noise
 end
 

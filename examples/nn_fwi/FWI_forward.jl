@@ -5,7 +5,7 @@ using ADCME
 using PyPlot
 using MAT
 using DelimitedFiles
-# matplotlib.use("Agg")
+matplotlib.use("Agg")
 close("all")
 if has_gpu()
   gpu = true
@@ -49,6 +49,7 @@ for i = 1:length(src)
     writedlm(joinpath(output_dir, "marmousi-r$i.txt"), Rs[i])
     # writedlm(joinpath(output_dir, "BP-r$i.txt"), Rs[i])
 end
+@info "Data written."
 
 ## visualize_wavefield if needed
 ii = 1 # source number

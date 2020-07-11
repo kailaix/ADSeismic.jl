@@ -75,21 +75,26 @@ function Generator(z, isTrain, dropout_rate; base=4, ratio=1, vmin=nothing, vmax
     x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 16)(z)
     x = tf.reshape(x, shape=[-1, Int(round(base * ratio)), base, 16])
     x = tf.keras.activations.tanh(x)
+    # x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
+    # x = tf.keras.layers.SpatialDropout2D(dropout_rate)(x, isTrain)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
     x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
     x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
+    # x = tf.keras.layers.SpatialDropout2D(dropout_rate)(x, isTrain)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
     x = tf.keras.layers.Conv2D(64, [4, 4], strides=(1, 1), padding="same")(x)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
     x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
-
+    # x = tf.keras.layers.SpatialDropout2D(dropout_rate)(x, isTrain)
+# 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
     x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
     x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
     x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
+    # x = tf.keras.layers.SpatialDropout2D(dropout_rate)(x, isTrain)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
     x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)

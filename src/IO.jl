@@ -4,15 +4,15 @@ export  load_params, load_elastic_model, load_elastic_receiver, load_elastic_sou
 function load_params(filename::String, option::String="Acoustic"; kwargs...)
 
     d =  matread(filename)
-
+    
     if option == "Acoustic"
         param = AcousticPropagatorParams(NX=d["nx"]-2, NY=d["ny"]-2,
                         NSTEP=d["nt"], DELTAX=d["dx"], 
-                        DELTAY=d["dy"], DELTAT=d["dt"], kwargs...)
+                        DELTAY=d["dy"], DELTAT=d["dt"]; kwargs...)
     elseif option == "Elastic"
         param = ElasticPropagatorParams(NX=d["nx"]-2, NY=d["ny"]-2,
                         NSTEP=d["nt"], DELTAX=d["dx"], 
-                        DELTAY=d["dy"], DELTAT=d["dt"], kwargs...)
+                        DELTAY=d["dy"], DELTAT=d["dt"]; kwargs...)
     else
         error("option should be either Acoustic or Elastic!");
     end

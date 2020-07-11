@@ -6,6 +6,7 @@ using MAT
 using PyPlot
 using Random
 using DelimitedFiles
+using Dates
 matplotlib.use("Agg")
 close("all")
 if has_gpu()
@@ -30,9 +31,7 @@ model_dir = "NN_model/NNFWI/marmousi_UQ/"
 if !ispath(model_dir)
   mkpath(model_dir)
 end
-if isfile(joinpath(result_dir, "loss.txt"))
-  rm(joinpath(result_dir, "loss.txt"))
-end
+loss_file = joinpath(result_dir, "loss_$(Dates.now()).txt")
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
@@ -40,7 +39,7 @@ model_name = "models/marmousi2-model-smooth.mat"
 # model_name = "models/BP-model-smooth.mat"
 
 ## load model setting
-params = load_params(model_name)
+params = load_params(model_name, vp_ref=1000)
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
 vp0 = matread(model_name)["vp"]
@@ -105,9 +104,13 @@ lr_decayed = tf.train.cosine_decay(0.001, global_step, max_iter)
 opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
 
 sess = Session(); init(sess)
-@info "Initial loss: ", run(sess, loss, feed_dict=Dict(isTrain=>true))
+loss0 = run(sess, loss, feed_dict=Dict(isTrain=>true))
+@info "Initial loss: ", loss0
+
 
 ## run inversion
+fp = open(loss_file, "w")
+write(fp, "0,$loss0\n")
 function callback(vs, iter, loss)
   if iter%50==1
     x = run(sess, vp, feed_dict=Dict(isTrain=>false))
@@ -121,9 +124,6 @@ function callback(vs, iter, loss)
     title("Iteration = $iter")
     savefig(joinpath(figure_dir, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
     writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), x')
-    open(joinpath(result_dir, "loss.txt"), "a") do io 
-      writedlm(io, loss)
-    end
 
     vp_std = std([run(sess, vp, feed_dict=Dict(isTrain=>true)) for i = 1:100])
     clf()
@@ -142,6 +142,9 @@ function callback(vs, iter, loss)
     ADCME.save(sess, joinpath(model_dir, "NNFWI_UQ_$(lpad(iter,5,"0")).mat"))
   end
 
+  write(fp, "$iter,$loss\n")
+  flush(fp)
+
 end
 
 ## optimization using Adam
@@ -156,3 +159,4 @@ end
 ## optimization using BFGS
 # Optimize!(sess, loss, vars=vars, grads=grad,  callback=callback)
 
+close(fp)

@@ -5,6 +5,7 @@ using MAT
 using PyPlot
 using PyCall
 using DelimitedFiles
+using Dates
 # matplotlib.use("Agg")
 close("all")
 if has_gpu()
@@ -17,32 +18,30 @@ data_dir = "data/acoustic"
 if !ispath(data_dir)
   mkpath(data_dir)
 end
-figure_dir = "figure/PhysGNN/BP/"
+figure_dir = "figure/PhysGNN/marmousi/"
 if !ispath(figure_dir)
   mkpath(figure_dir)
 end
-result_dir = "result/PhysGNN/BP/"
+result_dir = "result/PhysGNN/marmousi/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
-model_dir = "model/PhysGNN/BP/"
+model_dir = "model/PhysGNN/marmousi/"
 if !ispath(model_dir)
   mkpath(model_dir)
 end
-if isfile(joinpath(result_dir, "loss.txt"))
-  rm(joinpath(result_dir, "loss.txt"))
-end
+loss_file = joinpath(result_dir, "loss_$(Dates.now()).txt")
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
 batch_size = 8 ## number of models per source
 sample_size = 8 ## number of sampled y per source
-# model_name = "models/marmousi2-model-smooth.mat"
-model_name = "models/BP-model-smooth.mat"
+model_name = "models/marmousi2-model-smooth.mat"
+# model_name = "models/BP-model-smooth.mat"
 
 
 ## load model
-params = load_params(model_name)
+params = load_params(model_name, vp_ref=1000)
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
 nsrc = length(src)
@@ -58,8 +57,8 @@ vp0 = constant(vp0)
 ## load data
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
-    # Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
-    Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
+    Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
+    # Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
 end
 
 ## original fwi
@@ -71,11 +70,7 @@ end
 x, isTrain, y, z = sampleUQ(batch_size, sample_size, (size(src[1].srcv,1)+1,length(rcv[1].rcvi)), 
                             z_size=8, base=4, ratio=size(vp0)[1]/size(vp0)[2]) 
 x = x * std_vp0
-# vp = vp0 + tf.slice(x, (size(x).-(size(x)[1], size(vp0)...)).÷2, (size(x)[1], size(vp0)...))
 vp_ckpt = add_initial_model(x, vp0)
-
-## assemble acoustic propagator model
-# model = x->AcousticPropagatorSolver(params, x, vp^2)
 
 models = Array{Any}(undef, batch_size)
 for i = 1:batch_size
@@ -112,13 +107,16 @@ dic = Dict(
 )
 
 sess = Session(); init(sess)
-@info "Initial loss: ", run(sess, loss, feed_dict=dic)
+loss0 = run(sess, loss, feed_dict=dic)
+@info "Initial loss: ", loss0
 
 losses = []
 σ = 0 #0.05
 fixed_z = rand(Float32, size(z)...)
 time = 0
 std_Rs = [std(Rs[i]) for i = 1:nsrc]
+fp = open(loss_file, "w")
+write(fp, "0,$loss0\n")
 for iter = 1:max_iter
     if iter%50==1
       dic = Dict(
@@ -132,6 +130,9 @@ for iter = 1:max_iter
     if iter%1000 == 1
       ADCME.save(sess, joinpath(model_dir, "PhysGNN_$(lpad(iter,5,"0")).mat"))
     end
+
+    write(fp, "$iter,$loss\n")
+    flush(fp)
 
     i = rand(1:nsrc)
     dic = Dict(
@@ -151,8 +152,11 @@ for iter = 1:max_iter
       global mean_ls
       mean_ls += 1/(iter+1) * (ls - mean_ls)
     end
+    
     # println("[#$iter] loss = $loss_, mean loss = $mean_loss")
     println("   $iter\t$ls\t$mean_ls")
     println(" * time: $time")
     push!(losses, ls)
 end
+
+close(fp)

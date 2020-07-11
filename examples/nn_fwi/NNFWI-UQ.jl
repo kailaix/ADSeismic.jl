@@ -79,7 +79,7 @@ model = x->AcousticPropagatorSolver(params, x, vp^2)
 vars = get_collection()
 
 ## load data
-std_noise = 1
+std_noise = 0.5
 Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)

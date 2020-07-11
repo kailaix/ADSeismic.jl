@@ -267,7 +267,7 @@ function compute_loss_and_grads_GPU(model::Function, src::Union{Array{AcousticSo
         println("GPU $i --> sources $jobs")
         losses[i], gs[i] = run_on_gpu_device(i-1, jobs)
     end
-    # gs = [gradients_GPU(x) for x in losses]
+    gs = [gradients_GPU(x) for x in losses]
     return losses, gs
 end
 

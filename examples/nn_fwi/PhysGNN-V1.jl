@@ -4,9 +4,10 @@ using ADCME
 using MAT
 using PyPlot
 using PyCall
+using Random
 using DelimitedFiles
 using Dates
-# matplotlib.use("Agg")
+matplotlib.use("Agg")
 close("all")
 if has_gpu()
   gpu = true
@@ -26,7 +27,7 @@ result_dir = "result/PhysGNN/marmousi/"
 if !ispath(result_dir)
   mkpath(result_dir)
 end
-model_dir = "model/PhysGNN/marmousi/"
+model_dir = "NN_model/PhysGNN/marmousi/"
 if !ispath(model_dir)
   mkpath(model_dir)
 end
@@ -55,10 +56,13 @@ std_vp0 = std(vp0)
 vp0 = constant(vp0)
 
 ## load data
+std_noise = 0
+Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
     Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
     # Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
+    Rs[i] .+= randn(size(Rs[i])) .* std(Rs[i]) .* std_noise
 end
 
 ## original fwi

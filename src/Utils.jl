@@ -45,18 +45,23 @@ function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropaga
 end
     
 
-function plot_result(sess, var, feed_dict, iter; dirs::String="figures", var_name=nothing)
+function plot_result(sess, var, feed_dict, iter; figure_dir::String="figures", result_dir::String="results", var_name=nothing)
 
-    if !isdir(dirs)
-        dirs="./"
+    if !isdir(figure_dir)
+        figure_dir="./"
+    end
+    if !isdir(result_dir)
+        result_dir=figure_dir
     end
 
     x = run(sess, var, feed_dict=feed_dict)
 
     std_images = zeros(size(x,2), size(x,3)) * 0
+    mean_images = zeros(size(x,2), size(x,3)) * 0
     for i = 1:size(x,2)
         for j = 1:size(x, 3)
             std_images[i,j] = std(x[:, i, j, 1])
+            mean_images[i,j] = mean(x[:, i, j, 1])
         end
     end
 
@@ -65,9 +70,11 @@ function plot_result(sess, var, feed_dict, iter; dirs::String="figures", var_nam
     colorbar(shrink=0.5)
     title("Iteration = $iter")
     if isnothing(var_name)
-        savefig(joinpath(dirs, "std_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        savefig(joinpath(figure_dir, "std_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        writedlm(joinpath(result_dir, "std_$(lpad(iter,5,"0")).txt"), std_images')
     else
-        savefig(joinpath(dirs, "std_$(var_name)_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        savefig(joinpath(figure_dir, "std_$(var_name)_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        writedlm(joinpath(result_dir, "std_$(var_name)_$(lpad(iter,5,"0")).txt"), std_images')
     end
 
     figure()
@@ -84,9 +91,11 @@ function plot_result(sess, var, feed_dict, iter; dirs::String="figures", var_nam
     subplots_adjust(wspace=0, hspace=0)
     suptitle("Iteration = $iter")
     if isnothing(var_name)
-        savefig(joinpath(dirs, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        savefig(joinpath(figure_dir, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), mean_images')
     else
-        savefig(joinpath(dirs, "inv_$(var_name)_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        savefig(joinpath(figure_dir, "inv_$(var_name)_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
+        writedlm(joinpath(result_dir, "inv_$(var_name)_$(lpad(iter,5,"0")).txt"), mean_images')
     end
     # writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), vp*scale)
     close("all")

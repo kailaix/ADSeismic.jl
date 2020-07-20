@@ -66,7 +66,7 @@ vp0 = constant(vp0[:,:])
 # vp = squeeze(fc(z, [10,1])) * mean_vp0
 # vp = reshape(vp, size(vp0))
 isTrain = placeholder(Bool)
-dropout_rate=0.3
+dropout_rate=0.1
 Random.seed!(0);
 z = constant(rand(Float32, 1,8))
 x = Generator(z, isTrain, dropout_rate, ratio=size(vp0)[1]/size(vp0)[2], base=4)
@@ -79,7 +79,7 @@ model = x->AcousticPropagatorSolver(params, x, vp^2)
 vars = get_collection()
 
 ## load data
-std_noise = 0.5
+std_noise = 0.0
 Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)

@@ -56,13 +56,10 @@ std_vp0 = std(vp0)
 vp0 = constant(vp0)
 
 ## load data
-std_noise = 0
-Random.seed!(1234);
 Rs = Array{Array{Float64,2}}(undef, length(src))
 for i = 1:length(src)
     Rs[i] = readdlm(joinpath(data_dir, "marmousi-r$i.txt"))
     # Rs[i] = readdlm(joinpath(data_dir, "BP-r$i.txt"))
-    Rs[i] .+= randn(size(Rs[i])) .* std(Rs[i]) .* std_noise
 end
 
 ## original fwi
@@ -115,7 +112,7 @@ loss0 = run(sess, loss, feed_dict=dic)
 @info "Initial loss: ", loss0
 
 losses = []
-σ = 0 #0.05
+σ = 0
 fixed_z = rand(Float32, size(z)...)
 time = 0
 std_Rs = [std(Rs[i]) for i = 1:nsrc]
@@ -127,16 +124,12 @@ for iter = 1:max_iter
         isTrain=>true,
         z=>fixed_z
       )
-      # plot_result(sess, x, dic, iter, dirs=figure_dir, var_name="x")
-      plot_result(sess, vp_ckpt, dic, iter, dirs=figure_dir, var_name="vp")
+      plot_result(sess, vp_ckpt, dic, iter, figure_dir=figure_dir, result_dir=result_dir)
     end
 
     if iter%1000 == 1
       ADCME.save(sess, joinpath(model_dir, "PhysGNN_$(lpad(iter,5,"0")).mat"))
     end
-
-    write(fp, "$iter,$loss\n")
-    flush(fp)
 
     i = rand(1:nsrc)
     dic = Dict(
@@ -156,6 +149,9 @@ for iter = 1:max_iter
       global mean_ls
       mean_ls += 1/(iter+1) * (ls - mean_ls)
     end
+
+    write(fp, "$iter,$ls\n")
+    flush(fp)
     
     # println("[#$iter] loss = $loss_, mean loss = $mean_loss")
     println("   $iter\t$ls\t$mean_ls")

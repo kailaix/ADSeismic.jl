@@ -11,6 +11,7 @@ function scatter_nd_ops(ii,vv,m)
     scatter_nd_ops_(ii,vv,m)
 end
 
+
 ii = [1;3;2]
 vv = [1.;2.;3.]
 m = 6
@@ -18,6 +19,8 @@ m = 6
 u = scatter_nd_ops(ii,vv,m)
 sess = Session(); init(sess)
 @show run(sess, u)
+run_profile(sess, u)
+save_profile("gradtest.json")
 
 # uncomment it for testing gradients
 # error() 

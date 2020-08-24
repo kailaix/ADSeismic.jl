@@ -173,7 +173,7 @@ REGISTER_KERNEL_BUILDER(Name("ScatterNdOpsGrad").Device(DEVICE_CPU), ScatterNdOp
 **********************            GPU Operator            ******************************
 ***************************************************************************************/
 
-
+void get_ScatterNdOps_num(long long *out, const long long *m);
 #ifdef GOOGLE_CUDA
 class ScatterNdOpsOpGPU : public OpKernel {
 private:

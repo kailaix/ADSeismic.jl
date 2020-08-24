@@ -157,7 +157,12 @@ REGISTER_KERNEL_BUILDER(Name("GatherOpsGrad").Device(DEVICE_CPU), GatherOpsGradO
 **********************            GPU Operator            ******************************
 ***************************************************************************************/
 
-
+void Gpu_GatherOps_forward(double *out, const double *v, const long long *ii, int n);
+void Gpu_GatherOps_backward(
+  double *grad_v, 
+  const double *grad_out, 
+  const double *out, const double *v, const int64 *ii, int n
+);
 #ifdef GOOGLE_CUDA
 class GatherOpsOpGPU : public OpKernel {
 private:
@@ -185,8 +190,8 @@ public:
     // extra check
         
     // create output shape
-    
-    TensorShape out_shape({-1});
+    int n = ii_shape.dim_size(0);
+    TensorShape out_shape({n});
             
     // create output tensor
     
@@ -202,6 +207,8 @@ public:
     // implement your forward function here 
 
     // TODO:
+    Gpu_GatherOps_forward(
+      out_tensor, ipt_tensor, ii_tensor, n);
 
   }
 };
@@ -261,6 +268,11 @@ public:
     // implement your backward function here 
 
     // TODO:
+    int n = ii_shape.dim_size(0);
+    grad_ipt->flat<double>().setZero();
+    Gpu_GatherOps_backward(
+      grad_ipt_tensor, grad_out_tensor, 
+      out_tensor, ipt_tensor, ii_tensor, n);
     
   }
 };

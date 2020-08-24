@@ -1,5 +1,5 @@
 #define EIGEN_USE_GPU
-#include <cuda.h>
+#include "cuda.h"
 #include <stdio.h>
 
 #define vx(i,j) vx[(i)*(NY+2)+(j)]

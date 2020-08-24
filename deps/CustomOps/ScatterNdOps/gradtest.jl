@@ -5,31 +5,29 @@ using PyPlot
 using Random
 Random.seed!(233)
 
-tf.debugging.set_log_device_placement(true)
-acoustic_source = load_op_and_grad("./build/libAcousticSource","acoustic_source")
+function scatter_nd_ops(ii,vv,m)
+    scatter_nd_ops_ = load_op_and_grad("./build/libScatterNdOps","scatter_nd_ops")
+    ii,vv,m = convert_to_tensor(Any[ii,vv,m], [Int64,Float64,Int64])
+    scatter_nd_ops_(ii,vv,m)
+end
 
+ii = [1;3;2]
+vv = [1.;2.;3.]
+m = 6
 # TODO: specify your input parameters
-nx = 3
-ny = 3
-u = zeros((nx+2)*(ny+2))
-srci = [1;1;1]
-srcj = [1;2;3]
-srcv = ones(3)
+u = scatter_nd_ops(ii,vv,m)
+sess = Session(); init(sess)
+@show run(sess, u)
 
-u = acoustic_source(constant(u),constant(srci),constant(srcj),constant(srcv),constant(nx),constant(ny))
-sess = tf.Session()
-init(sess)
-run(sess, u)
-# error()
+# uncomment it for testing gradients
+# error() 
+
 
 # TODO: change your test parameter to `m`
+#       in the case of `multiple=true`, you also need to specify which component you are testings
 # gradient check -- v
-srci = constant(srci)
-srcj = constant(srcj)
-srcv = constant(srcv)
-
-function scalar_function(m)
-    return sum(acoustic_source(u,srci,srcj,m,constant(nx),constant(ny)))
+function scalar_function(x)
+    return sum(scatter_nd_ops(ii,x,m)^2)
 end
 
 # TODO: change `m_` and `v_` to appropriate values
@@ -51,8 +49,7 @@ for i = 1:5
     w_[i] = s_[i] - g_*sum(v_.*dy_)
 end
 
-sess = Session()
-init(sess)
+sess = Session(); init(sess)
 sval_ = run(sess, s_)
 wval_ = run(sess, w_)
 close("all")

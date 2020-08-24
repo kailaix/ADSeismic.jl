@@ -35,5 +35,3 @@ __global__ void ScatterAddOps_backward_kernel(double *grad_ipt, double *grad_upd
     ScatterAddOps_backward_kernel<<< (n-1)/64, 64 >>>(grad_ipt, grad_update, grad_out, out, ipt, ii, 
                         update, d, n);
    }
- 
- 

@@ -1,5 +1,31 @@
 export SimulatedObservation!, ElasticPropagatorSolver, AcousticPropagatorSolver
 
+function gather_ops(ipt,ii)
+    gather_ops_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","gather_ops")
+    ipt,ii = convert_to_tensor(Any[ipt,ii], [Float64,Int64])
+    out = gather_ops_(ipt,ii)
+    set_shape(out, (length(ii), ))
+end
+
+function Base.:getindex(o::PyObject, ii::Array{Int64,1})
+    gather_ops(o, ii)
+end
+
+
+function scatter_add_op(ipt, ii, vv)
+    scatter_add_ops_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","scatter_add_ops", multiple=true)
+    ipt,ii,vv = convert_to_tensor(Any[ipt,ii,vv], [Float64,Int64,Float64])
+    out = scatter_add_ops_(ipt,ii,vv)
+    set_shape(out, (length(ipt), ))
+end
+
+function scatter_nd_ops(ii,vv,m)
+    scatter_nd_ops_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","scatter_nd_ops")
+    ii,vv,m_ = convert_to_tensor(Any[ii,vv,m], [Int64,Float64,Int64])
+    out = scatter_nd_ops_(ii,vv,m_)
+    set_shape(out, (m,))
+end
+
 function ElasticPropagatorSolver(param::ElasticPropagatorParams, src::ElasticSource, 
     ρ::Union{PyObject, Array{Float64, 2}}, λ::Union{PyObject, Array{Float64, 2}}, μ::Union{PyObject, Array{Float64, 2}})
     ρ = tf.reshape(convert_to_tensor(ρ),(-1,))
@@ -16,7 +42,6 @@ function ElasticPropagatorSolver(param::ElasticPropagatorParams, src::ElasticSou
         mem_arr[i] = write(mem_arr[i], 1, constant(zeros((param.NX+2)*(param.NY+2))))
     end
     ax,bx,kx,ay,by,ky = compute_PML_Params(param)
-    
     
     function condition(i, vx_arr, vy_arr, sigmaxx_arr, sigmayy_arr, sigmaxy_arr, mem_arr...)
         i<=NSTEP+1
@@ -91,8 +116,8 @@ function fw1(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σx
     value_dvx_dx = adbroadcast(value_dvx_dx, kx[2,1:end-1], 3) + mem[1][ij]
     value_dvy_dy = adbroadcast(value_dvy_dy, ky[1,2:end], 4) + mem[2][ij]
     
-    σxx = scatter_add(σxx, ij, (λμ * value_dvx_dx + λ_ * value_dvy_dy) * DELTAT )
-    σyy = scatter_add(σyy, ij, (λμ * value_dvy_dy + λ_ * value_dvx_dx) * DELTAT )
+    σxx = scatter_add_op(σxx, ij, (λμ * value_dvx_dx + λ_ * value_dvy_dy) * DELTAT )
+    σyy = scatter_add_op(σyy, ij, (λμ * value_dvy_dy + λ_ * value_dvx_dx) * DELTAT )
 
     return vx, vy, σxx, σyy,σxy, mem
 end
@@ -121,7 +146,7 @@ function fw2(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σx
     value_dvy_dx = adbroadcast(value_dvy_dx, kx[1,2:end], 3) + mem[3][ij]
     value_dvx_dy = adbroadcast(value_dvx_dy, ky[1,1:end-1], 4) + mem[4][ij]
 
-    σxy = scatter_add(σxy, ij, μ_*(value_dvy_dx + value_dvx_dy) * DELTAT )
+    σxy = scatter_add_op(σxy, ij, μ_*(value_dvy_dx + value_dvx_dy) * DELTAT )
 
     return vx, vy, σxx, σyy, σxy,mem
 end
@@ -149,7 +174,7 @@ function fw3(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σx
     value_dsigmaxx_dx = adbroadcast(value_dsigmaxx_dx, kx[1,2:end], 3) + mem[5][ij]
     value_dsigmaxy_dy = adbroadcast(value_dsigmaxy_dy, ky[1,2:end], 4) + mem[6][ij]
 
-    vx = scatter_add(vx, ij, (value_dsigmaxx_dx + value_dsigmaxy_dy) * DELTAT / ρ[ij])
+    vx = scatter_add_op(vx, ij, (value_dsigmaxx_dx + value_dsigmaxy_dy) * DELTAT / ρ[ij])
     return vx, vy, σxx, σyy, σxy, mem
 end
 
@@ -180,12 +205,13 @@ function fw4(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σx
     value_dsigmaxy_dx = adbroadcast(value_dsigmaxy_dx, kx[2,1:end-1], 3) + mem[7][ij]
     value_dsigmayy_dy = adbroadcast(value_dsigmayy_dy, ky[2,1:end-1], 4) + mem[8][ij]
 
-    vy = scatter_add( vy, ij, (value_dsigmaxy_dx + value_dsigmayy_dy) * DELTAT / ρ_)
+    vy = scatter_add_op( vy, ij, (value_dsigmaxy_dx + value_dsigmayy_dy) * DELTAT / ρ_)
     return vx, vy, σxx, σyy, σxy,mem
 end
 
 function one_step(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
     ax, bx, ay, by, kx, ky, srci, srcj, srcv, srctype)
+    add_source = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","add_source", multiple=true)
     vx, vy, σxx, σyy, σxy,mem = fw1(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
                     ax, bx, ay, by, kx, ky)
     vx, vy, σxx, σyy, σxy,mem = fw2(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
@@ -459,13 +485,13 @@ function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, 
             (Δt^2/(2hy))*(ψ[IJp]-ψ[IJn]) -
             (1 - (σ[IJ]+τ[IJ])*Δt/2) * wold[IJ] 
     u = u / (1 + (σ[IJ]+τ[IJ])/2*Δt)
-    u = vector(IJ, u, (param.NX+2)*(param.NY+2))
+    u = scatter_nd_ops(IJ, u, (param.NX+2)*(param.NY+2))
     φ = (1. -Δt*σ[IJ]) * φ[IJ] + Δt * c[IJ] * (τ[IJ] -σ[IJ])/2hx *  
         (u[IpJ]-u[InJ])
     ψ = (1. -Δt*τ[IJ]) * ψ[IJ] + Δt * c[IJ] * (σ[IJ] -τ[IJ])/2hy * 
         (u[IJp]-u[IJn])
-    φ = vector(IJ, φ, (param.NX+2)*(param.NY+2))
-    ψ = vector(IJ, ψ, (param.NX+2)*(param.NY+2))
+    φ = scatter_nd_ops(IJ, φ, (param.NX+2)*(param.NY+2))
+    ψ = scatter_nd_ops(IJ, ψ, (param.NX+2)*(param.NY+2))
     u, φ, ψ
 end
 
@@ -507,7 +533,7 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
         end
 
         src_index = (srci - 1) * (param.NY+2) + srcj 
-        u = scatter_add(u, src_index, srcv*param.DELTAT^2)
+        u = scatter_add_op(u, src_index, srcv*param.DELTAT^2)
 
         ta_, tφ_, tψ_ = write(ta, i, u), write(tφ, i, φ), write(tψ, i, ψ)
         i+1, ta_, tφ_, tψ_
@@ -604,11 +630,12 @@ function adbroadcast(a, b, idx=1)
 end
 
 function makevector(m::PyObject, ij::Array{Int64}, o::PyObject)
-    vector(ij, o, length(m))
+    scatter_nd_ops(ij, o, length(m))
 end
 
 function SimulatedObservation!(ep::ElasticPropagator, rcv::ElasticReceiver)
     N = (ep.param.NX+2)*(ep.param.NY+2)
+    get_receive = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic", "get_receive")
     u = get_receive(tf.reshape(ep.vx, (ep.param.NSTEP+1, N)), 
                     tf.reshape(ep.vy, (ep.param.NSTEP+1, N)), 
                     tf.reshape(ep.sigmaxx, (ep.param.NSTEP+1, N)), 

@@ -25,3 +25,6 @@ test/figure
 test/.ipynb_checkpoints/
 !deps/build.jl
 System Volume Information
+!deps/CustomOps/ScatterAddOps/custom_op.txt
+!deps/CustomOps/ScatterNdOps/custom_op.txt
+!deps/CustomOps/GatherOps/custom_op.txt

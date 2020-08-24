@@ -1,8 +1,9 @@
 using ADCME
 
 cd("CustomOps")
-rm("build", force=true, recursive=true)
-mkdir("build")
+if !isdir("build")
+    mkdir("build")
+end
 cd("build")
 ADCME.cmake()
 ADCME.make()

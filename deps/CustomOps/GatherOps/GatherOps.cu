@@ -26,3 +26,4 @@ const double *out, const double *v, const long long *ii, int n
 ){
     GatherOps_backward_kernel<<< (n-1)/64 + 1, 64 >>>(grad_v, grad_out, out, v, ii, n);
 }
+

@@ -24,7 +24,7 @@ __global__ void ScatterAddOps_backward_kernel(double *grad_ipt, double *grad_upd
     if (p < n){
         grad_update[p] = grad_out[ii[p]-1];
     }
-}
+     }
  
  void Gpu_ScatterAddOps_backward(
    double *grad_ipt, double *grad_update, 

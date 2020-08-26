@@ -174,6 +174,15 @@ REGISTER_KERNEL_BUILDER(Name("ScatterNdOpsGrad").Device(DEVICE_CPU), ScatterNdOp
 ***************************************************************************************/
 
 void get_ScatterNdOps_num(long long *out, const long long *m);
+void Gpu_ScatterNdOps_forward(double *out, const long long *ii,
+    const double *update, int n, int N);
+void Gpu_ScatterNdOps_backward(
+    double *grad_update, 
+    const double *grad_out,
+    const double *out, const long long *ii,
+    const double *update, int n);
+
+
 #ifdef GOOGLE_CUDA
 class ScatterNdOpsOpGPU : public OpKernel {
 private:
@@ -224,8 +233,7 @@ public:
     // implement your forward function here 
 
     // TODO:
-    out->flat<double>().setZero();
-    ScatterNdOps_forward(out_tensor, ii_tensor, vv_tensor, N);
+    Gpu_ScatterNdOps_forward(out_tensor, ii_tensor, vv_tensor, N, n64);
 
   }
 };
@@ -293,8 +301,7 @@ public:
 
     // TODO:
     int N = vv_shape.dim_size(0);
-    grad_vv->flat<double>().setZero();
-    ScatterNdOps_backward(
+    Gpu_ScatterNdOps_backward(
       grad_vv_tensor, grad_out_tensor, out_tensor, ii_tensor, vv_tensor, N);
     
   }

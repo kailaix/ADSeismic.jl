@@ -161,7 +161,7 @@ void Gpu_GatherOps_forward(double *out, const double *v, const long long *ii, in
 void Gpu_GatherOps_backward(
   double *grad_v, 
   const double *grad_out, 
-  const double *out, const double *v, const int64 *ii, int n
+  const double *out, const double *v, const int64 *ii, int n, int N
 );
 #ifdef GOOGLE_CUDA
 class GatherOpsOpGPU : public OpKernel {
@@ -269,10 +269,10 @@ public:
 
     // TODO:
     int n = ii_shape.dim_size(0);
-    grad_ipt->flat<double>().setZero();
+    int N = ipt_shape.dim_size(0);
     Gpu_GatherOps_backward(
       grad_ipt_tensor, grad_out_tensor, 
-      out_tensor, ipt_tensor, ii_tensor, n);
+      out_tensor, ipt_tensor, ii_tensor, n, N);
     
   }
 };

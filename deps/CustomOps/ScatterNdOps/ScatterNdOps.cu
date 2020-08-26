@@ -1,5 +1,5 @@
 #include "cuda.h"
-
+#include <stdio.h>
 __global__ void ScatterNdOps_forward_kernel(double *out, const long long*ii, const double *update, int n){
     int p =  blockIdx.x *blockDim.x + threadIdx.x;
     if (p<n){
@@ -7,8 +7,16 @@ __global__ void ScatterNdOps_forward_kernel(double *out, const long long*ii, con
     }
 }
 
+__global__ void setzero_kernel(double *out, int n){
+    int p =  blockIdx.x *blockDim.x + threadIdx.x;
+    if (p<n){
+        out[p] = 0.0;
+    }
+}
+
 void Gpu_ScatterNdOps_forward(double *out, const long long *ii,
-    const double *update, int n){
+    const double *update, int n, int N){
+    setzero_kernel<<< (N - 1)/64 + 1, 64 >>>(out, N);
     ScatterNdOps_forward_kernel<<< (n - 1)/64 + 1, 64 >>>(out, ii, update, n);
  }
 
@@ -28,6 +36,7 @@ void Gpu_ScatterNdOps_backward(
     const double *grad_out,
     const double *out, const long long *ii,
     const double *update, int n){
+    setzero_kernel<<< (n - 1)/64 + 1, 64 >>>(grad_update, n);
     ScatterNdOps_backward_kernel<<< (n - 1)/64 + 1, 64 >>>(grad_update, grad_out, out, ii, update, n);
  }
 

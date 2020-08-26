@@ -159,7 +159,7 @@ public:
     // implement your backward function here 
 
     // TODO:
-int d = ipt_shape.dim_size(0), n = vv_shape.dim_size(0);
+    int d = ipt_shape.dim_size(0), n = vv_shape.dim_size(0);
     grad_ipt->flat<double>().setZero();
     ScatterAddOps_backward(
       grad_ipt_tensor, grad_vv_tensor, grad_out_tensor,
@@ -174,6 +174,13 @@ REGISTER_KERNEL_BUILDER(Name("ScatterAddOpsGrad").Device(DEVICE_CPU), ScatterAdd
 **********************            GPU Operator            ******************************
 ***************************************************************************************/
 
+void Gpu_ScatterAddOps_forward(double *out, const double *ipt, const long long *ii,
+    const double *update, int d, int n);
+void Gpu_ScatterAddOps_backward(
+   double *grad_ipt, double *grad_update, 
+   const double *grad_out,
+     const double *out, const double *ipt, const long long *ii,
+    const double *update, int d, int n);
 
 #ifdef GOOGLE_CUDA
 class ScatterAddOpsOpGPU : public OpKernel {
@@ -205,8 +212,8 @@ public:
     // extra check
         
     // create output shape
-    
-    TensorShape out_shape({-1});
+    int d = ipt_shape.dim_size(0), n = vv_shape.dim_size(0);
+    TensorShape out_shape({d});
             
     // create output tensor
     
@@ -223,6 +230,7 @@ public:
     // implement your forward function here 
 
     // TODO:
+    Gpu_ScatterAddOps_forward(out_tensor, ipt_tensor, ii_tensor, vv_tensor, d, n);
 
   }
 };
@@ -290,6 +298,10 @@ public:
     // implement your backward function here 
 
     // TODO:
+    int d = ipt_shape.dim_size(0), n = vv_shape.dim_size(0);
+    Gpu_ScatterAddOps_backward(
+      grad_ipt_tensor, grad_vv_tensor, grad_out_tensor,
+      out_tensor, ipt_tensor, ii_tensor, vv_tensor, d, n);
     
   }
 };

@@ -19,11 +19,14 @@ __global__ void GatherOps_backward_kernel(double *grad_v,
     }
 }
   
+extern __global__ void setzero_kernel(double *out, int n);
+
 void Gpu_GatherOps_backward(
 double *grad_v, 
 const double *grad_out, 
-const double *out, const double *v, const long long *ii, int n
+const double *out, const double *v, const long long *ii, int n, int N
 ){
+    setzero_kernel<<< (N - 1)/64 + 1, 64 >>>(grad_v, N);
     GatherOps_backward_kernel<<< (n-1)/64 + 1, 64 >>>(grad_v, grad_out, out, v, ii, n);
 }
 

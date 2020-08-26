@@ -13,10 +13,11 @@ end
 
 
 function scatter_add_op(ipt, ii, vv)
-    scatter_add_ops_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","scatter_add_ops", multiple=true)
+    scatter_add_ops_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","scatter_add_ops")
     ipt,ii,vv = convert_to_tensor(Any[ipt,ii,vv], [Float64,Int64,Float64])
     out = scatter_add_ops_(ipt,ii,vv)
     set_shape(out, (length(ipt), ))
+    # ipt = scatter_add(ipt, ii, vv)
 end
 
 function scatter_nd_ops(ii,vv,m)
@@ -24,6 +25,7 @@ function scatter_nd_ops(ii,vv,m)
     ii,vv,m_ = convert_to_tensor(Any[ii,vv,m], [Int64,Float64,Int64])
     out = scatter_nd_ops_(ii,vv,m_)
     set_shape(out, (m,))
+    # vector(ii, vv, m)
 end
 
 function ElasticPropagatorSolver(param::ElasticPropagatorParams, src::ElasticSource, 

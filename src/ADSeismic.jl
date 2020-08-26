@@ -24,5 +24,6 @@ module ADSeismic
     include("NN.jl")
     include("Optim.jl")
     include("Utils.jl")
+    include("ThirdParty.jl")
 
 end

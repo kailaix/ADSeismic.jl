@@ -2,6 +2,7 @@ using ADSeismic
 using ADCMEKit
 using ADCME
 using PyPlot
+using JLD2
 r = mpi_init()
 
 n = 100
@@ -38,20 +39,24 @@ sess = Session(); init(sess)
 U = run(sess, propagator.u)
 rcvv = run(sess, receiver.rcvv)
 
-# if mpi_rank()==0
-#     close("all")
-#     pcolormesh((rcvi.-1)*param.DELTAX, (0:param.NSTEP)*param.DELTAT,  rcvv, cmap="gray")
-#     colorbar()
-#     xlabel("Location")
-#     ylabel("Time")
-#     savefig("receiver.png")
 
-#     close("all")
-#     visualize_wavefield(U, param)
+@save "data/dat$(mpi_rank())-$(mpi_size()).jld2" U rcvv
 
-#     close("all")
-#     visualize_model(c, param)
-#     savefig("model.png")
-# end
+
+if mpi_size()==1
+    close("all")
+    pcolormesh((rcvi.-1)*param.DELTAX, (0:param.NSTEP)*param.DELTAT,  rcvv, cmap="gray")
+    colorbar()
+    xlabel("Location")
+    ylabel("Time")
+    savefig("receiver.png")
+
+    close("all")
+    visualize_wavefield(U, param)
+
+    close("all")
+    visualize_model(c, param)
+    savefig("model.png")
+end
 
 mpi_finalize()

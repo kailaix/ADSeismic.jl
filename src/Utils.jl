@@ -6,9 +6,13 @@ export visualize_wavefield, plot_result, add_initial_model,
     sampling_compute_loss_and_grads_GPU_v3,
     visualize_model
 
-function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorParams,AcousticPropagatorParams})
+function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams})
     clf()
-    pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  Array(vp'))
+    if isa(params, MPIAcousticPropagatorParams)
+        pcolormesh([0:params.NX-1;]*params.DELTAX/1e3,[0:params.NY-1;]*params.DELTAY/1e3,  Array(vp'))
+    else    
+        pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  Array(vp'))
+    end
     axis("scaled")
     colorbar(shrink=0.4)
     xlabel("x (km)")
@@ -16,7 +20,7 @@ function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorP
     gca().invert_yaxis()
 end
 
-function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams}; dirs::String="figure", kwargs...) 
+function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams}; dirs::String="figure", kwargs...) 
     
     if !isdir(dirs)
         dirs="./"
@@ -150,7 +154,7 @@ where
 A = 2/sqrt(3a)pi^1/4
 ```
 """
-function Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams}, 
+function Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MPIAcousticPropagatorParams}, 
         a::Union{PyObject, <:Real}, 
         shift::Union{PyObject, <:Real}, 
         amp::Union{PyObject, <:Real}=1.0)
@@ -168,7 +172,7 @@ function Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams},
     return total
 end
 
-function Gauss(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams},
+function Gauss(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MPIAcousticPropagatorParams},
         a::Union{<:Real, PyObject}, 
         shift::Union{<:Real, PyObject, Missing} = missing,
         amp::Union{<:Real, PyObject} = 1.0)

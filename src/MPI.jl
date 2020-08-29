@@ -71,7 +71,7 @@ mutable struct MPIAcousticSource
             if ((II - 1) * param.n + 1 <= srci[i] <= II * param.n) && 
                     ((JJ - 1) * param.n + 1 <= srcj[i] <= JJ * param.n)
                     push!(local_srci, srci[i] - (II - 1) * param.n)
-                    push!(local_srcj, srcj[i] - (JJ - 1) * param.n + 1)
+                    push!(local_srcj, srcj[i] - (JJ - 1) * param.n)
                     push!(local_srcv, srcv[i])
             end
         end
@@ -98,7 +98,7 @@ mutable struct MPIAcousticReceiver
             if ((II - 1) * param.n + 1 <= rcvi[i] <= II * param.n) && 
                     ((JJ - 1) * param.n + 1 <= rcvj[i] <= JJ * param.n)
                     push!(local_rcvi, rcvi[i] - (II - 1) * param.n)
-                    push!(local_rcvj, rcvj[i] - (JJ - 1) * param.n + 1)
+                    push!(local_rcvj, rcvj[i] - (JJ - 1) * param.n)
             end
         end
         if length(local_rcvi)>0
@@ -153,12 +153,14 @@ end
 function compute_PML_Params!(param::MPIAcousticPropagatorParams)
     NX, NY = param.NX, param.NY
     n = param.n
-    param.II, param.JJ = param.NX÷param.n, param.NY÷param.n
-    @assert mpi_size() == param.II * param.JJ
-    @assert NX>0 && NY>0
-    @assert mod(NX, n)==0 && mod(NY, n)==0
+    r = mpi_rank()
     param.M = div(NX,n)
     param.N = div(NY,n)
+    param.II, param.JJ = div(r, param.N)+1, mod(r, param.N)+1
+    @assert mpi_size() == param.M * param.N
+    @assert NX>0 && NY>0
+    @assert mod(NX, n)==0 && mod(NY, n)==0
+    
 
     # computing damping coefficient
     c, R = param.vp_ref, param.Rcoef
@@ -204,38 +206,39 @@ function get_mpi_id(a, b, n)
 end
 
 
-function one_step(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
+function one_step(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObject, 
+        φ, ψ, σ::PyObject, τ::PyObject, c::PyObject, i::PyObject)
     n = param.n 
     Δt = param.DELTAT
     hx, hy = param.DELTAX, param.DELTAY
     IJ, IpJ, InJ, IJp, IJn, IpJp, IpJn, InJp, InJn =
         param.IJ, param.IpJ, param.InJ, param.IJp, param.IJn, param.IpJp, param.IpJn, param.InJp, param.InJn
     
-    c = reshape(mpi_halo_exchange(c, param.M, param.N, fill_value=param.vp_ref), (-1,))
-    w = reshape(mpi_halo_exchange(w, param.M, param.N), (-1,))
-    wold = reshape(mpi_halo_exchange(wold, param.M, param.N), (-1,))
-    φ = reshape(mpi_halo_exchange(φ, param.M, param.N), (-1,))
-    ψ = reshape(mpi_halo_exchange(ψ, param.M, param.N), (-1,))
-    u = (2 - σ[IJ]*τ[IJ]*Δt^2 - 2*Δt^2/hx^2 * c[IJ] - 2*Δt^2/hy^2 * c[IJ]) * w[IJ] +
-            c[IJ] * (Δt/hx)^2  *  (w[IpJ]+w[InJ]) +
-            c[IJ] * (Δt/hy)^2  *  (w[IJp]+w[IJn]) +
+    c = reshape(c, (-1,))
+    w = reshape(mpi_halo_exchange(w, param.M, param.N, tag = 5*i), (-1,))
+    wold = reshape(mpi_halo_exchange(wold, param.M, param.N, tag = 5*i+1), (-1,))
+    φ = reshape(mpi_halo_exchange(φ, param.M, param.N, tag = 5*i+2), (-1,))
+    ψ = reshape(mpi_halo_exchange(ψ, param.M, param.N, tag = 5*i+3), (-1,))
+
+    u = (2 - σ[IJ]*τ[IJ]*Δt^2 - 2*Δt^2/hx^2 * c - 2*Δt^2/hy^2 * c) * w[IJ] +
+            c * (Δt/hx)^2  *  (w[IpJ]+w[InJ]) +
+            c * (Δt/hy)^2  *  (w[IJp]+w[IJn]) +
             (Δt^2/(2hx))*(φ[IpJ]-φ[InJ]) +
             (Δt^2/(2hy))*(ψ[IJp]-ψ[IJn]) -
             (1 - (σ[IJ]+τ[IJ])*Δt/2) * wold[IJ] 
-    u = u / (1 + (σ[IJ]+τ[IJ])/2*Δt)
-    
-    u = scatter_nd_ops(IJ, u, (n+2)*(n+2))
-    φ = (1. -Δt*σ[IJ]) * φ[IJ] + Δt * c[IJ] * (τ[IJ] -σ[IJ])/2hx *  
-        (u[IpJ]-u[InJ])
-    ψ = (1. -Δt*τ[IJ]) * ψ[IJ] + Δt * c[IJ] * (σ[IJ] -τ[IJ])/2hy * 
-        (u[IJp]-u[IJn])
-    φ = scatter_nd_ops(IJ, φ, (n+2)*(n+2))
-    ψ = scatter_nd_ops(IJ, ψ, (n+2)*(n+2))
+    u_local = u / (1 + (σ[IJ]+τ[IJ])/2*Δt)
 
-    u = reshape(u[IJ], (n, n))
-    φ = reshape(φ[IJ], (n, n))
-    ψ = reshape(ψ[IJ], (n, n))
-    u, φ, ψ
+    u_local_nxn = reshape(u_local, (n, n))
+    
+    u = reshape(mpi_halo_exchange(u_local_nxn, param.M, param.N, tag = 5*i+4), (-1,))
+    φ = (1. -Δt*σ[IJ]) * φ[IJ] + Δt * c * (τ[IJ] -σ[IJ])/2hx *  
+        (u[IpJ]-u[InJ])
+    ψ = (1. -Δt*τ[IJ]) * ψ[IJ] + Δt * c * (σ[IJ] -τ[IJ])/2hy * 
+        (u[IJp]-u[IJn])
+    φ = reshape(φ, (n, n))
+    ψ = reshape(ψ, (n, n))
+
+    u_local_nxn, φ, ψ
 end
 
 
@@ -268,7 +271,7 @@ function MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MP
 
     function body(i, ta, tφ, tψ)
         
-        u, φ, ψ = one_step(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c)
+        u, φ, ψ = one_step(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c, i)
         srci, srcj, srcv = AcousticSourceAtTimeT(src, i-1)
 
         if param.IT_DISPLAY>0
@@ -288,8 +291,8 @@ function MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MP
     end
 
     tu = TensorArray(param.NSTEP+1; clear_after_read=false)
-    tφ = TensorArray(param.NSTEP+1; clear_after_read=true)
-    tψ = TensorArray(param.NSTEP+1; clear_after_read=true)
+    tφ = TensorArray(param.NSTEP+1; clear_after_read=false)
+    tψ = TensorArray(param.NSTEP+1; clear_after_read=false)
     tu = write(tu, 1, constant(zeros(n, n)))
     tφ = write(tφ, 1, constant(zeros(n, n)))
     tψ = write(tψ, 1, constant(zeros(n, n)))
@@ -327,6 +330,8 @@ function MPISimulatedObservation!(ap::MPIAcousticPropagator, rcv::MPIAcousticRec
         return 
     end
     idx = @. (rcv.rcvi - 1) *  ap.param.n + rcv.rcvj 
+    @assert size(ap.u,1)==ap.param.NSTEP+1
+    @assert size(ap.u,2)==ap.param.n
     u = reshape(ap.u, (ap.param.NSTEP+1, -1))[:, idx]
     rcv.rcvv = u
 end

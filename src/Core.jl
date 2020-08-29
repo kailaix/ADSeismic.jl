@@ -474,8 +474,10 @@ end
 # todo:
 # one_step(::AcousticPropagatorParams, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject)
 
+
+
 function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
-    Δt = param.DELTAT
+    Δt = param.DELTAT = 0.3
     hx, hy = param.DELTAX, param.DELTAY
     IJ, IpJ, InJ, IJp, IJn, IpJp, IpJn, InJp, InJn =
         param.IJ, param.IpJ, param.InJ, param.IJp, param.IJn, param.IpJp, param.IpJn, param.InJp, param.InJn

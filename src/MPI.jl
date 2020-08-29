@@ -237,8 +237,9 @@ function one_step(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObjec
         (u[IJp]-u[IJn])
     φ = reshape(φ, (n, n))
     ψ = reshape(ψ, (n, n))
-
-    u_local_nxn, φ, ψ
+    u = reshape(u[IJ], (n, n))
+    
+    u, φ, ψ
 end
 
 
@@ -300,7 +301,7 @@ function MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MP
     tφ = write(tφ, 2, constant(zeros(n, n)))
     tψ = write(tψ, 2, constant(zeros(n, n)))
     i = constant(3, dtype=Int32)
-    _, tu, tφ, tψ = while_loop(condition, body, [i,tu,tφ,tψ]; swap_memory=true)
+    _, tu, tφ, tψ = while_loop(condition, body, [i,tu,tφ,tψ]; parallel_iterations=1)
     tu = set_shape(stack(tu), (param.NSTEP+1, n, n))
     tφ = set_shape(stack(tφ), (param.NSTEP+1, n, n))
     tψ = set_shape(stack(tψ), (param.NSTEP+1, n, n))

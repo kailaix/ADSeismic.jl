@@ -25,7 +25,8 @@ module ADSeismic
     include("Optim.jl")
     
     include("ThirdParty.jl")
-    include("MPI.jl")
+    include("MPIAcoustic.jl")
+    include("MPIElastic.jl")
     include("Utils.jl")
 
 end

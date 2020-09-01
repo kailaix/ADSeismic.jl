@@ -196,7 +196,7 @@ function compute_PML_Params!(param::MPIAcousticPropagatorParams)
 end
 
 function get_mpi_id(a, b, n)
-    idx = []
+    idx = Int64[]
     for i = 1:length(a)
         for j = 1:length(b)
             push!(idx, (n+2)*(a[i]-1)+b[j])

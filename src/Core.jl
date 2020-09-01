@@ -669,25 +669,8 @@ function SimulatedObservation!(ap::AcousticPropagator, rcv::AcousticReceiver)
 end
 
 
-# """
-#     pml_helper(t::Float64, USE_PML_MIN::Bool, USE_PML_MAX::Bool, η::Float64, damping::Float64, NPOWER::Int64)
-
-# Computing the PML profile. 
-# """
-# function pml_helper(x::Float64, USE_PML_MIN::Bool, USE_PML_MAX::Bool, 
-#     η::Float64, damping::Float64, NPOWER::Int64)
-#     # if x<η && USE_PML_MIN
-#     #     return damping/η*((x-η)/η)^NPOWER
-#     # elseif x>1-η && USE_PML_MAX
-#     #     return damping/η*((x-1+η)/η)^NPOWER
-#     # else
-#     #     return 0.0
-#     # end
-
-# end
-
 """
-    pml_helper(t::Float64, USE_PML_MIN::Bool, USE_PML_MAX::Bool, η::Float64, damping::Float64, NPOWER::Int64)
+    pml_helper(x::Float64, y::Float64, param::AcousticPropagatorParams)
 
 Computing the PML profile. 
 """

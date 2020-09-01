@@ -20,7 +20,9 @@ function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorP
     gca().invert_yaxis()
 end
 
-function visualize_wavefield(val::Array{Float64, 3}, param::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams}; dirs::String="figure", kwargs...) 
+function visualize_wavefield(val::Array{Float64, 3}, 
+    param::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams, MPIElasticPropagatorParams}; 
+    dirs::String="figure", kwargs...) 
     
     if !isdir(dirs)
         dirs="./"
@@ -154,7 +156,7 @@ where
 A = 2/sqrt(3a)pi^1/4
 ```
 """
-function Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MPIAcousticPropagatorParams}, 
+function Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MPIAcousticPropagatorParams, MPIElasticPropagatorParams}, 
         a::Union{PyObject, <:Real}, 
         shift::Union{PyObject, <:Real}, 
         amp::Union{PyObject, <:Real}=1.0)
@@ -172,7 +174,7 @@ function Ricker(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MP
     return total
 end
 
-function Gauss(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MPIAcousticPropagatorParams},
+function Gauss(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MPIAcousticPropagatorParams, MPIElasticPropagatorParams},
         a::Union{<:Real, PyObject}, 
         shift::Union{<:Real, PyObject, Missing} = missing,
         amp::Union{<:Real, PyObject} = 1.0)
@@ -201,6 +203,10 @@ function compute_default_properties(NX::Int, NY::Int, vp::Float64, vs::Float64, 
         end
     end
     λ, ρ, μ
+end
+
+function compute_default_properties(param::MPIElasticPropagatorParams, vp::Float64, vs::Float64, rho::Float64)
+    compute_default_properties(param.n, param.n, vp, vs, rho)
 end
 
 function compute_properties(vp::Union{PyObject, Array{Float64}}, 

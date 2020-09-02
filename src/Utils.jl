@@ -206,7 +206,7 @@ function compute_default_properties(NX::Int, NY::Int, vp::Float64, vs::Float64, 
 end
 
 function compute_default_properties(param::MPIElasticPropagatorParams, vp::Float64, vs::Float64, rho::Float64)
-    compute_default_properties(param.n, param.n, vp, vs, rho)
+    compute_default_properties(param.n+2, param.n+2, vp, vs, rho)
 end
 
 function compute_properties(vp::Union{PyObject, Array{Float64}}, 

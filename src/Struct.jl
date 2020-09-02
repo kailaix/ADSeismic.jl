@@ -27,8 +27,26 @@ export ElasticPropagatorParams, ElasticPropagator, ElasticSource, ElasticReceive
     
     # display params
     IT_DISPLAY::Int64 = 0
+
+    # index
 end
 
+"""
+    mutable struct ElasticSource
+        srci::Union{Array{Int64, 1},PyObject}
+        srcj::Union{Array{Int64, 1},PyObject}
+        srctype::Union{Array{Int64, 1},PyObject}
+        srcv::Union{Array{Float64, 2},PyObject}
+    end
+
+Add source terms to different components according to `srctype`
+
+- 0: `vx`
+- 1: `vy`
+- 2: `σxx`
+- 3: `σyy`
+- 4: `σxy`
+"""
 mutable struct ElasticSource
     srci::Union{Array{Int64, 1},PyObject}
     srcj::Union{Array{Int64, 1},PyObject}

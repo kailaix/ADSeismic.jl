@@ -41,6 +41,18 @@ export MPIElasticPropagatorParams, MPIElasticSource, MPIElasticReceiver, MPIElas
     # mpi 
     II::Int64 = -1 
     JJ::Int64 = -1
+
+    # indices 
+    i_1j::Union{Missing, Array{Int64, 1}} = missing
+    i_2j::Union{Missing, Array{Int64, 1}} = missing
+    i1j::Union{Missing, Array{Int64, 1}} = missing
+    i2j::Union{Missing, Array{Int64, 1}} = missing
+    ij_1::Union{Missing, Array{Int64, 1}} = missing
+    ij_2::Union{Missing, Array{Int64, 1}} = missing
+    ij1::Union{Missing, Array{Int64, 1}} = missing
+    ij2::Union{Missing, Array{Int64, 1}} = missing
+    ij::Union{Missing, Array{Int64, 1}} = missing
+    i1j1::Union{Missing, Array{Int64, 1}} = missing
     
 end
 
@@ -70,8 +82,8 @@ mutable struct MPIElasticSource
         for i = 1:nsrc
             if ((II - 1) * param.n + 1 <= srci[i] <= II * param.n) && 
                     ((JJ - 1) * param.n + 1 <= srcj[i] <= JJ * param.n)
-                    push!(local_srci, srci[i] - (II - 1) * param.n)
-                    push!(local_srcj, srcj[i] - (JJ - 1) * param.n)
+                    push!(local_srci, srci[i] - (II - 1) * param.n + 2)
+                    push!(local_srcj, srcj[i] - (JJ - 1) * param.n + 2)
                     push!(local_srcv, srcv[i])
                     push!(local_srctype, srctype[i])
             end
@@ -130,6 +142,17 @@ mutable struct MPIElasticPropagator
     mem::PyObject
 end
 
+
+function get_mpi_id2(a, b, n)
+    idx = Int64[]
+    for i = 1:length(a)
+        for j = 1:length(b)
+            push!(idx, (n+4)*(a[i]-1)+b[j])
+        end
+    end
+    idx
+end
+
 function compute_PML_Params!(param::MPIElasticPropagatorParams)
     NX, NY = param.NX, param.NY
     n = param.n
@@ -140,6 +163,23 @@ function compute_PML_Params!(param::MPIElasticPropagatorParams)
     @assert mpi_size() == param.M * param.N
     @assert NX>0 && NY>0
     @assert mod(NX, n)==0 && mod(NY, n)==0
+
+    # ID 
+    k1 = 4:n+3
+    k2 = 5:n+4
+    k_1 = 2:n+1
+    k_2 = 1:n
+    kk = 3:n+2
+    param.i_1j = get_mpi_id2(k_1, kk, n)
+    param.i_2j = get_mpi_id2(k_2, kk, n)
+    param.i1j = get_mpi_id2(k1, kk, n)
+    param.i2j = get_mpi_id2(k2, kk, n)
+    param.ij_1 = get_mpi_id2(kk, k_1, n)
+    param.ij_2 = get_mpi_id2(kk, k_2, n)
+    param.ij1 = get_mpi_id2(kk, k1, n)
+    param.ij2 = get_mpi_id2(kk, k2, n)
+    param.ij = get_mpi_id2(kk, kk, n)
+    param.i1j1 = get_mpi_id2(k1, k1, n)
     
 
     ## define profile of absorption in PML region
@@ -321,7 +361,7 @@ function compute_PML_Params!(param::MPIElasticPropagatorParams)
     param.ay = ay
     param.by = by
     param.ky = ky
-
+    param
 end
 
 function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIElasticSource, 
@@ -330,7 +370,7 @@ function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIE
     λ = reshape(convert_to_tensor(λ),(-1,))
     μ = reshape(convert_to_tensor(μ),(-1,))
     n = param.n
-    @assert size(ρ)==size(λ)==size(μ)==((n+2)^2,)
+    @assert size(ρ)==size(λ)==size(μ)==((n+4)^2,)
     @assert param.II>0
     if !ismissing(src.srcv)
         @assert size(src.srcv, 2)==length(src.srci)==length(src.srcj)==length(src.srctype)
@@ -364,13 +404,13 @@ function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIE
         for k = 1:8
             m = read(mem_arr[k], i-1)
             m = reshape(m, (n, n))
-            mem[k] = mpi_halo_exchange(m, param.M, param.N)
+            mem[k] = mpi_halo_exchange2(m, param.M, param.N)
             mem[k] = reshape(mem[k], (-1,))
         end
 
         halo = op->begin 
             op = reshape(op, (n, n))
-            op = mpi_halo_exchange(op, param.M, param.N)
+            op = mpi_halo_exchange2(op, param.M, param.N)
             op = reshape(op, (-1,))
         end
         vx, vy, σxx, σyy, σxy = [halo(op) for op in [vx, vy, σxx, σyy, σxy]]
@@ -413,25 +453,26 @@ function fw1(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     NX, NY = param.NX, param.NY
     n = param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
-    i_1j = get_mpi_id(1:n-1, 3:n+1, n)
-    ij = get_mpi_id(2:n, 3:n+1, n)
-    i1j = get_mpi_id(3:n+1, 3:n+1, n)
-    i2j = get_mpi_id(4:n+2, 3:n+1, n)
+    i_1j = param.i_1j
+    i_2j = param.i_2j
+    i1j = param.i1j
+    i2j = param.i2j
+    ij_1 = param.ij_1
+    ij_2 = param.ij_2
+    ij1 = param.ij1
+    ij2 = param.ij2
+    ij = param.ij
 
-    ij_2 = get_mpi_id(2:n, 1:n-1, n)
-    ij_1 = get_mpi_id(2:n, 2:n, n)
-    ij1 = get_mpi_id(2:n, 4:n+2, n)
     λ_ = 0.5*(λ[i1j]+λ[ij])
     μ_ = 0.5*(μ[i1j]+μ[ij])
     λμ = λ_ + 2μ_
     value_dvx_dx = (27vx[i1j]-27vx[ij]-vx[i2j]+vx[i_1j])/(24*DELTAX)
     value_dvy_dy = (27*vy[ij]-27*vy[ij_1]-vy[ij1]+vy[ij_2]) / (24*DELTAY)
     # broadcast
-    mem[1] =  makevector(mem[1], ij, adbroadcast(bx[2,1:end-1], mem[1][ij], 1) + adbroadcast(ax[2,1:end-1], value_dvx_dx, 1));
-    mem[2] =  makevector(mem[2], ij, adbroadcast(by[1,2:end], mem[2][ij], 2) + adbroadcast(ay[1,2:end], value_dvy_dy, 2));
-    
-    value_dvx_dx = adbroadcast(value_dvx_dx, kx[2,1:end-1], 3) + mem[1][ij]
-    value_dvy_dy = adbroadcast(value_dvy_dy, ky[1,2:end], 4) + mem[2][ij]
+    mem[1] =  makevector(mem[1], ij, adbroadcast(bx[2,:], mem[1][ij], 1) + adbroadcast(ax[2,:], value_dvx_dx, 1));
+    mem[2] =  makevector(mem[2], ij, adbroadcast(by[1,:], mem[2][ij], 2) + adbroadcast(ay[1,:], value_dvy_dy, 2));
+    value_dvx_dx = adbroadcast(value_dvx_dx, kx[2,:], 3) + mem[1][ij]
+    value_dvy_dy = adbroadcast(value_dvy_dy, ky[1,:], 4) + mem[2][ij]
     σxx = scatter_add_op(σxx, ij, (λμ * value_dvx_dx + λ_ * value_dvy_dy) * DELTAT )
     σyy = scatter_add_op(σyy, ij, (λμ * value_dvy_dy + λ_ * value_dvx_dx) * DELTAT )
 
@@ -443,25 +484,26 @@ function fw2(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     NX, NY = param.NX, param.NY
     n = param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
-    i_2j = get_mpi_id(1:n-1, 2:n, n)
-    i_1j = get_mpi_id(2:n, 2:n, n)
-    ij = get_mpi_id(3:n+1, 2:n, n)
-    i1j = get_mpi_id(4:n+2, 2:n, n)
-
-    ij_1 = get_mpi_id(3:n+1, 1:n-1, n)
-    ij1 = get_mpi_id(3:n+1, 3:n+1, n)
-    ij2 = get_mpi_id(3:n+1, 4:n+2, n)
+    i_1j = param.i_1j
+    i_2j = param.i_2j
+    i1j = param.i1j
+    i2j = param.i2j
+    ij_1 = param.ij_1
+    ij_2 = param.ij_2
+    ij1 = param.ij1
+    ij2 = param.ij2
+    ij = param.ij
 
     μ_ = 0.5*(μ[ij]+μ[ij1])
     value_dvy_dx = (27vy[ij]-27vy[i_1j]-vy[i1j]+vy[i_2j])/(24*DELTAX)
     value_dvx_dy = (27*vx[ij1]-27*vx[ij]-vx[ij2]+vx[ij_1]) / (24*DELTAY)
 
     # broadcast
-    mem[3] = makevector(mem[3], ij,  adbroadcast(bx[1,2:end], mem[3][ij], 1) + adbroadcast(ax[1, 2:end], value_dvy_dx, 1))
-    mem[4] = makevector(mem[4], ij,  adbroadcast(by[2,1:end-1], mem[4][ij], 2) + adbroadcast(ay[2, 1:end-1], value_dvx_dy, 2));
+    mem[3] = makevector(mem[3], ij,  adbroadcast(bx[1,:], mem[3][ij], 1) + adbroadcast(ax[1, :], value_dvy_dx, 1))
+    mem[4] = makevector(mem[4], ij,  adbroadcast(by[2,:], mem[4][ij], 2) + adbroadcast(ay[2, :], value_dvx_dy, 2));
 
-    value_dvy_dx = adbroadcast(value_dvy_dx, kx[1,2:end], 3) + mem[3][ij]
-    value_dvx_dy = adbroadcast(value_dvx_dy, ky[1,1:end-1], 4) + mem[4][ij]
+    value_dvy_dx = adbroadcast(value_dvy_dx, kx[1,:], 3) + mem[3][ij]
+    value_dvx_dy = adbroadcast(value_dvx_dy, ky[1,:], 4) + mem[4][ij]
 
     σxy = scatter_add_op(σxy, ij, μ_*(value_dvy_dx + value_dvx_dy) * DELTAT )
 
@@ -474,23 +516,24 @@ function fw3(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     NX, NY = param.NX, param.NY
     n = param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
-    i_2j = get_mpi_id(1:n-1, 3:n+1, n)
-    i_1j = get_mpi_id(2:n, 3:n+1, n)
-    ij = get_mpi_id(3:n+1, 3:n+1, n)
-    i1j = get_mpi_id(4:n+2, 3:n+1, n)
-
-    ij_2 = get_mpi_id(3:n+1, 1:n-1, n)
-    ij_1 = get_mpi_id(3:n+1, 2:n, n)
-    ij1 = get_mpi_id(3:n+1, 4:n+2, n)
+    i_1j = param.i_1j
+    i_2j = param.i_2j
+    i1j = param.i1j
+    i2j = param.i2j
+    ij_1 = param.ij_1
+    ij_2 = param.ij_2
+    ij1 = param.ij1
+    ij2 = param.ij2
+    ij = param.ij
 
     value_dsigmaxx_dx = (27*σxx[ij]-27*σxx[i_1j]-σxx[i1j]+σxx[i_2j]) / (24*DELTAX);
     value_dsigmaxy_dy = (27*σxy[ij]-27*σxy[ij_1]-σxy[ij1]+σxy[ij_2]) / (24*DELTAY);
 
-    mem[5] = makevector(mem[5],ij, adbroadcast(bx[1,2:end], mem[5][ij], 1) + adbroadcast(ax[1,2:end], value_dsigmaxx_dx, 1))
-    mem[6] = makevector(mem[6],ij, adbroadcast(by[1,2:end], mem[6][ij], 2) + adbroadcast(ay[1,2:end], value_dsigmaxy_dy, 2))
+    mem[5] = makevector(mem[5],ij, adbroadcast(bx[1,:], mem[5][ij], 1) + adbroadcast(ax[1,:], value_dsigmaxx_dx, 1))
+    mem[6] = makevector(mem[6],ij, adbroadcast(by[1,:], mem[6][ij], 2) + adbroadcast(ay[1,:], value_dsigmaxy_dy, 2))
 
-    value_dsigmaxx_dx = adbroadcast(value_dsigmaxx_dx, kx[1,2:end], 3) + mem[5][ij]
-    value_dsigmaxy_dy = adbroadcast(value_dsigmaxy_dy, ky[1,2:end], 4) + mem[6][ij]
+    value_dsigmaxx_dx = adbroadcast(value_dsigmaxx_dx, kx[1,:], 3) + mem[5][ij]
+    value_dsigmaxy_dy = adbroadcast(value_dsigmaxy_dy, ky[1,:], 4) + mem[6][ij]
 
     vx = scatter_add_op(vx, ij, (value_dsigmaxx_dx + value_dsigmaxy_dy) * DELTAT / ρ[ij])
     return vx, vy, σxx, σyy, σxy, mem
@@ -502,26 +545,27 @@ function fw4(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     ax, bx, ay, by, kx, ky)
     NX, NY, n = param.NX, param.NY, param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
-    i_1j = get_mpi_id(1:n-1, 2:n, n)
-    ij = get_mpi_id(2:n, 2:n, n)
-    i1j = get_mpi_id(3:n+1, 2:n, n)
-    i2j = get_mpi_id(4:n+2, 2:n, n)
-    i1j1 = get_mpi_id(3:n+1, 3:n+1, n)
-
-    ij_1 = get_mpi_id(2:n, 1:n-1, n)
-    ij1 = get_mpi_id(2:n, 3:n+1, n)
-    ij2 = get_mpi_id(2:n, 4:n+2, n)
+    i_1j = param.i_1j
+    i_2j = param.i_2j
+    i1j = param.i1j
+    i2j = param.i2j
+    ij_1 = param.ij_1
+    ij_2 = param.ij_2
+    ij1 = param.ij1
+    ij2 = param.ij2
+    ij = param.ij
+    i1j1 = param.i1j1
 
     ρ_ = 0.25 * (ρ[ij] + ρ[i1j] + ρ[i1j1] + ρ[ij1]);
 
     value_dsigmaxy_dx = (27*σxy[i1j]-27*σxy[ij]-σxy[i2j]+σxy[i_1j]) / (24*DELTAX);
     value_dsigmayy_dy = (27*σyy[ij1]-27*σyy[ij]-σyy[ij2]+σyy[ij_1]) / (24*DELTAY);
 
-    mem[7] = makevector(mem[7], ij, adbroadcast(bx[2,1:end-1], mem[7][ij], 1) + adbroadcast(ax[2,1:end-1] , value_dsigmaxy_dx, 1))
-    mem[8] = makevector(mem[8], ij, adbroadcast(by[2,1:end-1], mem[8][ij], 2) + adbroadcast(ay[2,1:end-1] , value_dsigmayy_dy, 2))
+    mem[7] = makevector(mem[7], ij, adbroadcast(bx[2,:], mem[7][ij], 1) + adbroadcast(ax[2,:] , value_dsigmaxy_dx, 1))
+    mem[8] = makevector(mem[8], ij, adbroadcast(by[2,:], mem[8][ij], 2) + adbroadcast(ay[2,:] , value_dsigmayy_dy, 2))
 
-    value_dsigmaxy_dx = adbroadcast(value_dsigmaxy_dx, kx[2,1:end-1], 3) + mem[7][ij]
-    value_dsigmayy_dy = adbroadcast(value_dsigmayy_dy, ky[2,1:end-1], 4) + mem[8][ij]
+    value_dsigmaxy_dx = adbroadcast(value_dsigmaxy_dx, kx[2,:], 3) + mem[7][ij]
+    value_dsigmayy_dy = adbroadcast(value_dsigmayy_dy, ky[2,:], 4) + mem[8][ij]
 
     vy = scatter_add_op( vy, ij, (value_dsigmaxy_dx + value_dsigmayy_dy) * DELTAT / ρ_)
     return vx, vy, σxx, σyy, σxy,mem
@@ -540,9 +584,9 @@ function one_step(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, �
     vx, vy, σxx, σyy, σxy,mem = fw4(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
                     ax, bx, ay, by, kx, ky)    
     if !ismissing(srci)
-        σxx, σyy, σxy,vx, vy  = add_source(σxx, σyy, σxy,vx, vy, constant(srci),constant(srcj),constant(srctype),constant(n),constant(n),srcv)
+        σxx, σyy, σxy,vx, vy  = add_source(σxx, σyy, σxy,vx, vy, constant(srci),constant(srcj),constant(srctype),constant(n+2),constant(n+2),srcv)
     end
-    ij = get_mpi_id(2:n+1, 2:n+1, n)
+    ij = param.ij
     σxx, σyy, σxy,vx, vy  = σxx[ij], σyy[ij], σxy[ij],vx[ij],vy[ij]
     for i = 1:8
         mem[i] = mem[i][ij]

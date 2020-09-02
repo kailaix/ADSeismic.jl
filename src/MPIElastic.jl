@@ -230,7 +230,7 @@ function compute_PML_Params!(param::MPIElasticPropagatorParams)
     alpha_y_half = zeros(n)
     
     for i = 1:n
-        xval = DELTAX * (i-1) + (param.M - 1) * param.n * DELTAX
+        xval = DELTAX * (i-1) + (param.II - 1) * param.n * DELTAX
         if (USE_PML_XMIN)
             
             abscissa_in_PML = xoriginleft - xval
@@ -296,7 +296,7 @@ function compute_PML_Params!(param::MPIElasticPropagatorParams)
     
     for j = 1:n
         
-        yval = DELTAY * (j-1) + (param.N - 1) * param.n * DELTAX
+        yval = DELTAY * (j-1) + (param.JJ - 1) * param.n * DELTAX
         if param.USE_PML_YMIN
             abscissa_in_PML = yoriginbottom - yval
             if (abscissa_in_PML >= 0.0)
@@ -403,20 +403,25 @@ function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIE
             read(vx_arr, i-1), read(vy_arr, i-1)
         for k = 1:8
             m = read(mem_arr[k], i-1)
-            m = reshape(m, (n, n))
-            mem[k] = mpi_halo_exchange2(m, param.M, param.N)
-            mem[k] = reshape(mem[k], (-1,))
+            mem[k] = _reshape_and_halo_exchange(m, param, 18*i+k-1, k>1 ? mem[k-1][1] : missing)
         end
 
-        halo = op->begin 
-            op = reshape(op, (n, n))
-            op = mpi_halo_exchange2(op, param.M, param.N)
-            op = reshape(op, (-1,))
+        mpi_idx = 18*i+8
+        
+        halo = (op, deps)->begin 
+            op = _reshape_and_halo_exchange(op, param, mpi_idx, deps)
+            mpi_idx = mpi_idx + 1
+            op
         end
-        vx, vy, σxx, σyy, σxy = [halo(op) for op in [vx, vy, σxx, σyy, σxy]]
+        vx = halo(vx, mem[8][1])
+        vy = halo(vy, vx[1])
+        σxx = halo(σxx, vy[1])
+        σyy = halo(σyy, σxx[1])
+        σxy = halo(σxy, σyy[1])
+
         srci,srcj,srctype,srcv = ElasticSourceAtTimeT(src, i-1) 
-        σxx, σyy, σxy,vx, vy, mem = one_step(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-            ax, bx, ay, by, kx, ky, srci, srcj, srcv, srctype)
+        σxx, σyy, σxy,vx, vy, mem, mpi_idx = one_step(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
+            ax, bx, ay, by, kx, ky, srci, srcj, srcv, srctype, mpi_idx)
 
         sigmaxx_arr,sigmayy_arr,sigmaxy_arr,vx_arr,vy_arr = 
             write(sigmaxx_arr, i, σxx), write(sigmayy_arr, i, σyy), write(sigmaxy_arr, i, σxy),
@@ -449,7 +454,7 @@ function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIE
 end
 
 function fw1(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-        ax, bx, ay, by, kx, ky)
+        ax, bx, ay, by, kx, ky, mpi_idx)
     NX, NY = param.NX, param.NY
     n = param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
@@ -476,11 +481,14 @@ function fw1(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     σxx = scatter_add_op(σxx, ij, (λμ * value_dvx_dx + λ_ * value_dvy_dy) * DELTAT )
     σyy = scatter_add_op(σyy, ij, (λμ * value_dvy_dy + λ_ * value_dvx_dx) * DELTAT )
 
-    return vx, vy, σxx, σyy,σxy, mem
+    σxx = _reshape_and_halo_exchange(σxx[ij], param, mpi_idx, missing)
+    σyy = _reshape_and_halo_exchange(σyy[ij], param, mpi_idx+1, σxx[1])
+
+    return vx, vy, σxx, σyy,σxy, mem, mpi_idx+2
 end
 
 function fw2(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-    ax, bx, ay, by, kx, ky)
+    ax, bx, ay, by, kx, ky, mpi_idx)
     NX, NY = param.NX, param.NY
     n = param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
@@ -506,13 +514,26 @@ function fw2(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     value_dvx_dy = adbroadcast(value_dvx_dy, ky[1,:], 4) + mem[4][ij]
 
     σxy = scatter_add_op(σxy, ij, μ_*(value_dvy_dx + value_dvx_dy) * DELTAT )
+    σxy = _reshape_and_halo_exchange(σxy[ij], param, mpi_idx, missing)
 
-    return vx, vy, σxx, σyy, σxy,mem
+    return vx, vy, σxx, σyy, σxy,mem, mpi_idx+1
 end
 
+function _reshape_and_print(o, m, n, info)
+    o = reshape(o, (m, n))    
+    o = print_tensor(o, info)
+    reshape(o, (m*n,))
+end
+
+function _reshape_and_halo_exchange(o, param, tag, deps)
+    @assert size(o)==(param.n^2,)
+    o = reshape(o, (param.n, param.n))
+    out = mpi_halo_exchange2(o, param.M, param.N, tag = tag, deps= deps)
+    reshape(out, ((param.n+4)^2,))
+end
 
 function fw3(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-    ax, bx, ay, by, kx, ky)
+    ax, bx, ay, by, kx, ky, mpi_idx)
     NX, NY = param.NX, param.NY
     n = param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
@@ -526,6 +547,11 @@ function fw3(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     ij2 = param.ij2
     ij = param.ij
 
+    # σxx = if_else(mpi_rank()==1, _reshape_and_print(σxx, n+4, n+4, "sigmaxx"), σxx)
+    # σxy = if_else(mpi_rank()==1, _reshape_and_print(σxy, n+4, n+4, "sigmaxy"), σxy)
+    # mem[5] = if_else(mpi_rank()==1, _reshape_and_print(mem[5], n+4, n+4, "mem5"), mem[5])
+    # mem[6] = if_else(mpi_rank()==1, _reshape_and_print(mem[6], n+4, n+4, "mem6"), mem[6])
+
     value_dsigmaxx_dx = (27*σxx[ij]-27*σxx[i_1j]-σxx[i1j]+σxx[i_2j]) / (24*DELTAX);
     value_dsigmaxy_dy = (27*σxy[ij]-27*σxy[ij_1]-σxy[ij1]+σxy[ij_2]) / (24*DELTAY);
 
@@ -536,13 +562,15 @@ function fw3(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     value_dsigmaxy_dy = adbroadcast(value_dsigmaxy_dy, ky[1,:], 4) + mem[6][ij]
 
     vx = scatter_add_op(vx, ij, (value_dsigmaxx_dx + value_dsigmaxy_dy) * DELTAT / ρ[ij])
-    return vx, vy, σxx, σyy, σxy, mem
+
+    vx = _reshape_and_halo_exchange(vx[ij], param, mpi_idx, missing)
+    return vx, vy, σxx, σyy, σxy, mem, mpi_idx+1
 end
 
 
 
 function fw4(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-    ax, bx, ay, by, kx, ky)
+    ax, bx, ay, by, kx, ky, mpi_idx)
     NX, NY, n = param.NX, param.NY, param.n
     DELTAX, DELTAY, DELTAT = param.DELTAX, param.DELTAY, param.DELTAT
     i_1j = param.i_1j
@@ -568,21 +596,25 @@ function fw4(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, 
     value_dsigmayy_dy = adbroadcast(value_dsigmayy_dy, ky[2,:], 4) + mem[8][ij]
 
     vy = scatter_add_op( vy, ij, (value_dsigmaxy_dx + value_dsigmayy_dy) * DELTAT / ρ_)
-    return vx, vy, σxx, σyy, σxy,mem
+
+    vy = _reshape_and_halo_exchange(vy[ij], param, mpi_idx, missing)
+    return vx, vy, σxx, σyy, σxy,mem, mpi_idx+1
 end
 
 function one_step(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-    ax, bx, ay, by, kx, ky, srci, srcj, srcv, srctype)
+    ax, bx, ay, by, kx, ky, srci, srcj, srcv, srctype, mpi_idx)
     n = param.n
+    @assert size(ρ)==size(λ)==size(μ)==size(vx)==size(vy)==size(σxx)==size(σyy)==size(σxy)==((n+4)^2,)
+
     add_source = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","add_source", multiple=true)
-    vx, vy, σxx, σyy, σxy,mem = fw1(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-                    ax, bx, ay, by, kx, ky)
-    vx, vy, σxx, σyy, σxy,mem = fw2(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-                    ax, bx, ay, by, kx, ky)
-    vx, vy, σxx, σyy, σxy,mem = fw3(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-                    ax, bx, ay, by, kx, ky)
-    vx, vy, σxx, σyy, σxy,mem = fw4(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
-                    ax, bx, ay, by, kx, ky)    
+    vx, vy, σxx, σyy, σxy,mem, mpi_idx = fw1(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
+                    ax, bx, ay, by, kx, ky, mpi_idx)
+    vx, vy, σxx, σyy, σxy,mem, mpi_idx = fw2(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
+                    ax, bx, ay, by, kx, ky, mpi_idx)
+    vx, vy, σxx, σyy, σxy,mem, mpi_idx = fw3(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
+                    ax, bx, ay, by, kx, ky, mpi_idx)
+    vx, vy, σxx, σyy, σxy,mem, mpi_idx = fw4(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
+                    ax, bx, ay, by, kx, ky, mpi_idx)    
     if !ismissing(srci)
         σxx, σyy, σxy,vx, vy  = add_source(σxx, σyy, σxy,vx, vy, constant(srci),constant(srcj),constant(srctype),constant(n+2),constant(n+2),srcv)
     end
@@ -591,7 +623,7 @@ function one_step(param::MPIElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, �
     for i = 1:8
         mem[i] = mem[i][ij]
     end
-    return σxx, σyy, σxy,vx, vy, mem
+    return σxx, σyy, σxy,vx, vy, mem, mpi_idx
 end
 
 

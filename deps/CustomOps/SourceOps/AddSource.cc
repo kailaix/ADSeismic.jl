@@ -467,7 +467,7 @@ public:
 REGISTER_KERNEL_BUILDER(Name("AddSourceGrad").Device(DEVICE_GPU), AddSourceGradOpGPU);
 
 #endif
-#if 1
+
 class AddSourceOpCPU : public OpKernel {
 private:
   
@@ -774,4 +774,3 @@ public:
   }
 };
 REGISTER_KERNEL_BUILDER(Name("AddSourceGrad").Device(DEVICE_CPU), AddSourceGradOp);
-#endif

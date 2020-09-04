@@ -33,9 +33,7 @@ sess = Session(); init(sess)
 @info "starting..."
 Vx, Vy, Sxx, Syy, Sxy = run(sess, [propagator.vx, propagator.vy, propagator.sigmaxx, propagator.sigmayy, propagator.sigmaxy])
 
-if mpi_size()>1
-    mpi_finalize()  
-end
+
 if mpi_rank()==0 && mpi_size()==1
     # close("all")
     # pcolormesh(rcvv, cmap="gray")
@@ -47,4 +45,8 @@ if mpi_rank()==0 && mpi_size()==1
     close("all")
     visualize_wavefield(Vx, param)
 
+end
+
+if mpi_size()>1
+    mpi_finalize()  
 end

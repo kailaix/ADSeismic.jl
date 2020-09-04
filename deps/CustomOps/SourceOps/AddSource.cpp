@@ -113,6 +113,17 @@ void backwardCPU(
       g_vy(i,j) = g_vy_(i,j);
   }
 
+  string str;
+  char ss[1024];
+  for (int i = 0; i<NX + 2; i++){
+    for(int j = 0; j<NY + 2; j++){
+      sprintf(ss, "%f ", g_vx(i, j));
+      str += string(ss);
+    }
+    str += "\n";
+  }
+  str += "-------------------------------------------------";
+  printf("%s\n", str.c_str());
 
   
   for(int i=0;i<nsrc;i++){

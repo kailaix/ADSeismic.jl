@@ -1,8 +1,8 @@
 export install_geodynamics
-import ADCME: require_gfortran, require_file, GFORTRAN, http_file, change_directory
+import ADCME: get_gfortran, require_file, GFORTRAN, http_file, change_directory
 function install_geodynamics()
     PWD = pwd()
-    require_gfortran()
+    get_gfortran()
     GEODYNAMICS = joinpath(ADCME.PREFIXDIR, "geodynamics")
     change_directory(GEODYNAMICS)
     require_file("seismic_CPML_2D_pressure_second_order.f90") do 

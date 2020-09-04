@@ -5,9 +5,9 @@ using JLD2
 ADCME.options.customop.verbose = false
 mpi_init()
 M = N = Int(sqrt(mpi_size()))
-n = 100÷M
+n = 10÷M
 
-param = MPIElasticPropagatorParams(NX=100, NY=100, n=n, NSTEP=1000, DELTAT=1e-4, 
+param = MPIElasticPropagatorParams(NX=10, NY=10, n=n, NSTEP=10, DELTAT=1e-4, 
     DELTAX=1.0, DELTAY=1.0,
     USE_PML_XMIN=true, USE_PML_XMAX = true, USE_PML_YMIN = true, USE_PML_YMAX = true)
 compute_PML_Params!(param)
@@ -29,24 +29,27 @@ src = MPIElasticSource(param, srci, srcj, srctype, srcv)
 propagator = MPIElasticPropagatorSolver(param, src, ρ, λ, μ)
 
 sess = Session(); init(sess)
+@info "starting..."
 Vx, Vy, Sxx, Syy, Sxy = run(sess, [propagator.vx, propagator.vy, propagator.sigmaxx, propagator.sigmayy, propagator.sigmaxy])
 
+# Vx = run(sess, propagator.vx)
+
 # Vx[2,:,:]
-# @info "saving..."
-# @save "data/dat$(mpi_rank())-$(mpi_size()).jld2" Vx Vy Sxx Syy Sxy
+@info "saving..."
+@save "data/dat$(mpi_rank())-$(mpi_size()).jld2" Vx Vy Sxx Syy Sxy param
 
-# if mpi_size()>1
-#     mpi_finalize()  
-# end
-if mpi_rank()==0 && mpi_size()==1
-    # close("all")
-    # pcolormesh(rcvv, cmap="gray")
-    # colorbar()
-    # xlabel("Location")
-    # ylabel("Time")
-    # savefig("receiver.png")
-
-    close("all")
-    visualize_wavefield(Vx, param)
-
+if mpi_size()>1
+    mpi_finalize()  
 end
+# if mpi_rank()==0 && mpi_size()==1
+#     # close("all")
+#     # pcolormesh(rcvv, cmap="gray")
+#     # colorbar()
+#     # xlabel("Location")
+#     # ylabel("Time")
+#     # savefig("receiver.png")
+
+#     close("all")
+#     visualize_wavefield(Vx, param)
+
+# end

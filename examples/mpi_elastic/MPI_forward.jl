@@ -5,9 +5,9 @@ using JLD2
 ADCME.options.customop.verbose = false
 mpi_init()
 M = N = Int(sqrt(mpi_size()))
-n = 100÷M
+n = 10÷M
 
-param = MPIElasticPropagatorParams(NX=100, NY=100, n=n, NSTEP=1000, DELTAT=1e-4, 
+param = MPIElasticPropagatorParams(NX=10, NY=10, n=n, NSTEP=10, DELTAT=1e-4, 
     DELTAX=1.0, DELTAY=1.0,
     USE_PML_XMIN=true, USE_PML_XMAX = true, USE_PML_YMIN = true, USE_PML_YMAX = true)
 compute_PML_Params!(param)

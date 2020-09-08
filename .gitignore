@@ -30,3 +30,4 @@ System Volume Information
 !deps/CustomOps/GatherOps/custom_op.txt
 test/
 examples/mpi_acoustic/data/*.jld2
+*.jld2

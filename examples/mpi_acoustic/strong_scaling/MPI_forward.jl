@@ -7,10 +7,11 @@ using Statistics
 mpi_init()
 
 M = N = Int(round(sqrt(mpi_size())))
-n = 100
+n_total = 1000
 @info M 
+n = n_total÷M
 param = MPIAcousticPropagatorParams(NX = n*M, NY = n*N, n = n,
-     Rcoef=0.2, DELTAX=10, DELTAY=10, DELTAT=0.05, NSTEP = 2000) 
+     Rcoef=0.2, DELTAX=10, DELTAY=10, DELTAT=0.05, NSTEP = 100) 
 compute_PML_Params!(param)
 
 srci = [n*param.M÷5]

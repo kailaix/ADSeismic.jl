@@ -7,12 +7,13 @@ using DelimitedFiles
 using Statistics
 mpi_init()
 
+
 M = N = Int(round(sqrt(mpi_size())))
 n_total = 1000
 @info M 
 n = n_total÷M
 param = MPIAcousticPropagatorParams(NX = n*M, NY = n*N, n = n,
-     Rcoef=0.2, DELTAX=10, DELTAY=10, DELTAT=0.05, NSTEP = 2000) 
+     Rcoef=0.2, DELTAX=10, DELTAY=10, DELTAT=0.05, NSTEP = 100) 
 compute_PML_Params!(param)
 
 
@@ -55,10 +56,10 @@ MPISimulatedObservation!(propagator, receiver)
 @load "data/dat$(mpi_rank())-$(mpi_size()).jld2" rcvv
 
 local_loss = sum(propagator.u[end,:]) * 1e-20
-# if !isnothing(rcvv)
-#     @info mpi_rank(), "value"
-#     global local_loss += sum((receiver.rcvv - rcvv )^2) 
-# end
+if !isnothing(rcvv)
+    @info mpi_rank(), "value"
+    global local_loss += sum((receiver.rcvv - rcvv )^2) 
+end
 
 loss = mpi_sum(local_loss)
 G = gradients(loss, θ)

@@ -104,7 +104,7 @@ mutable struct MPIElasticReceiver
     rcvtype::Union{Missing, Array{Int64, 1}}
     rcvv::Union{Missing, PyObject}
     function MPIElasticReceiver(param::MPIElasticPropagatorParams, rcvi::Array{Int64,1}, 
-        rcvtype::Array{Int64, 1}, rcvj::Array{Int64,1})
+         rcvj::Array{Int64,1}, rcvtype::Array{Int64, 1})
         II, JJ = param.II, param.JJ 
         nrcv = length(rcvi)
         local_rcvi = Int64[]
@@ -650,15 +650,21 @@ end
 
 Extract and save simulated displacement u into rcv::ElasticReceiver.
 """
-function MPISimulatedObservation!(ap::MPIElasticPropagator, rcv::MPIElasticReceiver)
+function MPISimulatedObservation!(ep::MPIElasticPropagator, rcv::MPIElasticReceiver)
     if ismissing(rcv.rcvi)
-        op = group(ap.u)
+        op = group([ep.vx, ep.vy, ep.sigmaxx, ep.sigmayy, ep.sigmaxy])
         rcv.rcvv = op
         return 
     end
-    idx = @. (rcv.rcvi - 1) *  ap.param.n + rcv.rcvj 
-    @assert size(ap.u,1)==ap.param.NSTEP+1
-    @assert size(ap.u,2)==ap.param.n
-    u = reshape(ap.u, (ap.param.NSTEP+1, -1))[:, idx]
+
+    N = (ep.param.n)*(ep.param.n)
+    get_receive = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic", "get_receive")
+    u = get_receive(tf.reshape(ep.vx, (ep.param.NSTEP+1, N)), 
+                    tf.reshape(ep.vy, (ep.param.NSTEP+1, N)), 
+                    tf.reshape(ep.sigmaxx, (ep.param.NSTEP+1, N)), 
+                    tf.reshape(ep.sigmayy, (ep.param.NSTEP+1, N)), 
+                    tf.reshape(ep.sigmaxy, (ep.param.NSTEP+1, N)),
+                    convert_to_tensor(rcv.rcvi), convert_to_tensor(rcv.rcvj), convert_to_tensor(rcv.rcvtype),
+                        constant(ep.param.n-2), constant(ep.param.n-2))
     rcv.rcvv = u
 end

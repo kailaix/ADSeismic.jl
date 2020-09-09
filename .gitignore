@@ -31,3 +31,4 @@ System Volume Information
 test/
 examples/mpi_acoustic/data/*.jld2
 .ipynb_checkpoints
+*.jld2

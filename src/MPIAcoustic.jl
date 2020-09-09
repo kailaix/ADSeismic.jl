@@ -215,10 +215,10 @@ function one_step(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObjec
         param.IJ, param.IpJ, param.InJ, param.IJp, param.IJn, param.IpJp, param.IpJn, param.InJp, param.InJn
     
     c = reshape(c, (-1,))
-    w = reshape(mpi_halo_exchange(w, param.M, param.N, tag = 5*i), (-1,))
-    wold = reshape(mpi_halo_exchange(wold, param.M, param.N, tag = 5*i+1), (-1,))
-    φ = reshape(mpi_halo_exchange(φ, param.M, param.N, tag = 5*i+2), (-1,))
-    ψ = reshape(mpi_halo_exchange(ψ, param.M, param.N, tag = 5*i+3), (-1,))
+    w = reshape(mpi_halo_exchange(w, param.M, param.N, tag = 5*i, deps=cast(Float64, i)), (-1,))
+    wold = reshape(mpi_halo_exchange(wold, param.M, param.N, tag = 5*i+1, deps=w[1]), (-1,))
+    φ = reshape(mpi_halo_exchange(φ, param.M, param.N, tag = 5*i+2, deps=wold[1]), (-1,))
+    ψ = reshape(mpi_halo_exchange(ψ, param.M, param.N, tag = 5*i+3, deps=φ[1]), (-1,))
 
     u = (2 - σ[IJ]*τ[IJ]*Δt^2 - 2*Δt^2/hx^2 * c - 2*Δt^2/hy^2 * c) * w[IJ] +
             c * (Δt/hx)^2  *  (w[IpJ]+w[InJ]) +
@@ -230,7 +230,7 @@ function one_step(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObjec
 
     u_local_nxn = reshape(u_local, (n, n))
     
-    u = reshape(mpi_halo_exchange(u_local_nxn, param.M, param.N, tag = 5*i+4), (-1,))
+    u = reshape(mpi_halo_exchange(u_local_nxn, param.M, param.N, tag = 5*i+4, deps=ψ[1]), (-1,))
     φ = (1. -Δt*σ[IJ]) * φ[IJ] + Δt * c * (τ[IJ] -σ[IJ])/2hx *  
         (u[IpJ]-u[InJ])
     ψ = (1. -Δt*τ[IJ]) * ψ[IJ] + Δt * c * (σ[IJ] -τ[IJ])/2hy * 
@@ -291,9 +291,10 @@ function MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MP
         i+1, ta_, tφ_, tψ_
     end
 
+    @info n, param.NSTEP
     tu = TensorArray(param.NSTEP+1; clear_after_read=false)
-    tφ = TensorArray(param.NSTEP+1; clear_after_read=false)
-    tψ = TensorArray(param.NSTEP+1; clear_after_read=false)
+    tφ = TensorArray(param.NSTEP+1; clear_after_read=true)
+    tψ = TensorArray(param.NSTEP+1; clear_after_read=true)
     tu = write(tu, 1, constant(zeros(n, n)))
     tφ = write(tφ, 1, constant(zeros(n, n)))
     tψ = write(tψ, 1, constant(zeros(n, n)))
@@ -333,6 +334,5 @@ function MPISimulatedObservation!(ap::MPIAcousticPropagator, rcv::MPIAcousticRec
     idx = @. (rcv.rcvi - 1) *  ap.param.n + rcv.rcvj 
     @assert size(ap.u,1)==ap.param.NSTEP+1
     @assert size(ap.u,2)==ap.param.n
-    u = reshape(ap.u, (ap.param.NSTEP+1, -1))[:, idx]
-    rcv.rcvv = u
+    rcv.rcvv = reshape(ap.u, (ap.param.NSTEP+1, -1))[:, idx]
 end

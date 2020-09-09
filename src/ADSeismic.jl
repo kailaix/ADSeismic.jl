@@ -1,7 +1,6 @@
 module ADSeismic
 
     using ADCME
-    using ADCMEKit
     using Optim
     using PyPlot
     using PyCall

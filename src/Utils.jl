@@ -7,6 +7,7 @@ export visualize_wavefield, plot_result, add_initial_model,
     visualize_model
 
 function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams})
+    
     clf()
     if isa(params, MPIAcousticPropagatorParams)
         pcolormesh([0:params.NX-1;]*params.DELTAX/1e3,[0:params.NY-1;]*params.DELTAY/1e3,  Array(vp'))
@@ -18,15 +19,12 @@ function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorP
     xlabel("x (km)")
     ylabel("z (km)")
     gca().invert_yaxis()
+    
 end
 
+
 function visualize_wavefield(val::Array{Float64, 3}, 
-    param::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams, MPIElasticPropagatorParams}; 
-    dirs::String="figure", kwargs...) 
-    
-    if !isdir(dirs)
-        dirs="./"
-    end
+    param::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams, MPIElasticPropagatorParams})
     
     figure()
     vmin = -3std(val)
@@ -45,9 +43,7 @@ function visualize_wavefield(val::Array{Float64, 3},
         t.set_text("Time = $(round((i-1)*param.DELTAT, digits=2))")
     end
     p = animate(update, [2:dt:size(val, 1);])
-    saveanim(p, joinpath(dirs, "forward_wavefield.gif"))
 
-    return p
 end
     
 

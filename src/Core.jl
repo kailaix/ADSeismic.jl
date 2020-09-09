@@ -11,7 +11,6 @@ function Base.:getindex(o::PyObject, ii::Array{Int64,1})
     gather_ops(o, ii)
 end
 
-
 function scatter_add_op(ipt, ii, vv)
     scatter_add_ops_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","scatter_add_ops")
     ipt,ii,vv = convert_to_tensor(Any[ipt,ii,vv], [Float64,Int64,Float64])
@@ -477,7 +476,7 @@ end
 
 
 function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
-    Δt = param.DELTAT = 0.3
+    Δt = param.DELTAT
     hx, hy = param.DELTAX, param.DELTAY
     IJ, IpJ, InJ, IJp, IJn, IpJp, IpJn, InJp, InJn =
         param.IJ, param.IpJ, param.InJ, param.IJp, param.IJn, param.IpJp, param.IpJn, param.InJp, param.InJn

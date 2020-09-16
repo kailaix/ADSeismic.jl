@@ -43,7 +43,8 @@ if mpi_rank()==0 && mpi_size()==1
     # savefig("receiver.png")
 
     close("all")
-    visualize_wavefield(Vx, param)
+    p = visualize_wavefield(Vx, param)
+    saveanim(p, "elastic_wavefied.gif")
 
 end
 

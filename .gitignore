@@ -32,3 +32,8 @@ test/
 examples/mpi_acoustic/data/*.jld2
 .ipynb_checkpoints
 *.jld2
+
+*.tex 
+*.pdf 
+*.png
+*.gif

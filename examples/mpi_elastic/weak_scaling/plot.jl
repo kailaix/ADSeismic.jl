@@ -1,5 +1,7 @@
 using PyPlot 
 using DelimitedFiles
+using PyCall 
+mpl = pyimport("tikzplotlib")
 
 weak = readdlm("timing.txt")
 
@@ -16,3 +18,4 @@ legend(fontsize=18)
 grid("on")
 tight_layout()
 savefig("elastic_weak.png")
+mpl.save("../figures/elastic_weak.tex")

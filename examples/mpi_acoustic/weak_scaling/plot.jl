@@ -1,5 +1,8 @@
 using PyPlot 
 using DelimitedFiles
+using PyCall 
+
+mpl = pyimport("tikzplotlib")
 
 weak = readdlm("timing.txt")
 
@@ -16,3 +19,4 @@ legend(fontsize=18)
 grid("on")
 tight_layout()
 savefig("acoustic_weak.png")
+mpl.save("../figures/acoustic_weak.tex")

@@ -1,5 +1,4 @@
 using ADSeismic
-using ADCMEKit
 using ADCME
 using PyPlot
 using DelimitedFiles
@@ -53,11 +52,15 @@ if mpi_size()==1
     savefig("receiver.png")
 
     close("all")
-    visualize_wavefield(U, param)
-
+    p = visualize_wavefield(U, param)
+    saveanim(p, "wavefield.gif")
+    
     close("all")
     visualize_model(c, param)
     savefig("model.png")
+    xlabel("x")
+    ylabel("y")
+    savefig("model.pdf")
 end
 
 @info "Saving..."

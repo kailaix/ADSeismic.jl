@@ -1,6 +1,8 @@
 using PyPlot
 using DelimitedFiles
+using PyCall 
 
+mpl = pyimport("tikzplotlib")
 d = readdlm("timing.txt")
 idx = sortperm(d[:,1])
 d = d[idx,:]
@@ -34,6 +36,7 @@ ylabel("Time (sec)")
 xticks(d[:,1], Int.(d[:,1]))
 grid("on", which="both", linestyle=":")
 savefig("elastic_time_forward_and_backward.png")
+mpl.save("../figures/elastic_time_forward_and_backward.tex")
 
 close("all")
 figure(figsize=(10,4))
@@ -58,3 +61,4 @@ xticks(d[:,1], Int.(d[:,1]))
 grid("on", which="both", linestyle=":")
 
 savefig("elastic_speedup_and_efficiency.png")
+mpl.save("../figures/elastic_speedup_and_efficiency.tex")

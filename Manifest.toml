@@ -2,7 +2,7 @@
 
 [[ADCME]]
 deps = ["CMake", "FFTW", "LibGit2", "Libdl", "LinearAlgebra", "MAT", "Pkg", "PyCall", "Random", "SparseArrays", "SpecialFunctions", "Statistics"]
-git-tree-sha1 = "1e8e9c2537da125cc13ea815cbf70f88fc6e9a3c"
+git-tree-sha1 = "d48dee71e3bcd52af57cf9730bf5500c86a462a9"
 repo-rev = "master"
 repo-url = "https://github.com/kailaix/ADCME.jl.git"
 uuid = "07b341a0-ce75-57c6-b2de-414ffdc00be5"
@@ -53,6 +53,12 @@ git-tree-sha1 = "50a8b41d2c562fccd9ab841085fc7d1e2706da82"
 uuid = "631607c0-34d2-5d66-819e-eb0f9aa2061a"
 version = "1.2.0"
 
+[[Calculus]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
+uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
+version = "0.5.1"
+
 [[CodeTracking]]
 deps = ["InteractiveUtils", "UUIDs"]
 git-tree-sha1 = "ccc043a0df446cac279dca29d13e2827b40aceb5"
@@ -85,9 +91,9 @@ version = "0.3.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "215f1c81cfd1c5416cd78740bff8ef59b24cd7c0"
+git-tree-sha1 = "7c7f4cda0d58ec999189d70f5ee500348c4b4df1"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.15.0"
+version = "3.16.0"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Libdl", "Pkg"]
@@ -108,9 +114,9 @@ version = "1.3.0"
 
 [[DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "6189e66c78a2d840db5ee530ac2326505b3cc7ae"
+git-tree-sha1 = "0347f23484a96d56e7096eb1f55c6975be34b11a"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.18.4"
+version = "0.18.6"
 
 [[Dates]]
 deps = ["Printf"]
@@ -119,6 +125,12 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 [[DelimitedFiles]]
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+
+[[DiffEqDiffTools]]
+deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
+git-tree-sha1 = "a4ed8a740484627ea41b47f7e1a25dd909a28353"
+uuid = "01453d9d-ee7c-5054-8395-0335cb756afa"
+version = "1.7.0"
 
 [[DiffResults]]
 deps = ["StaticArrays"]
@@ -156,12 +168,6 @@ deps = ["LinearAlgebra", "Random", "SparseArrays"]
 git-tree-sha1 = "4863cbb7910079369e258dee4add9d06ead5063a"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
 version = "0.8.14"
-
-[[FiniteDiff]]
-deps = ["ArrayInterface", "LinearAlgebra", "Requires", "SparseArrays", "StaticArrays"]
-git-tree-sha1 = "c98c1b5c2b5eeb6d867ec77b936132b8e7c978c0"
-uuid = "6a86dc24-6348-571c-b903-95158fe2bd41"
-version = "2.6.0"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -277,10 +283,10 @@ version = "0.4.4"
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[NLSolversBase]]
-deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
-git-tree-sha1 = "db63edd0199a4813a1fa117e3c840a4528b59d72"
+deps = ["Calculus", "DiffEqDiffTools", "DiffResults", "Distributed", "ForwardDiff"]
+git-tree-sha1 = "f1b8ed89fa332f410cfc7c937682eb4d0b361521"
 uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
-version = "7.7.0"
+version = "7.5.0"
 
 [[NaNMath]]
 git-tree-sha1 = "c84c576296d0e2fbb3fc134d3e09086b3ea617cd"
@@ -300,9 +306,9 @@ uuid = "429524aa-4258-5aef-a3af-852621145aeb"
 version = "0.22.0"
 
 [[OrderedCollections]]
-git-tree-sha1 = "293b70ac1780f9584c89268a6e2a560d938a7065"
+git-tree-sha1 = "16c08bf5dba06609fe45e30860092d6fa41fde7b"
 uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.3.0"
+version = "1.3.1"
 
 [[Parameters]]
 deps = ["OrderedCollections", "UnPack"]
@@ -358,15 +364,15 @@ version = "0.2.0"
 
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "8c08d0c7812169e438a8478dae2a529377ad13f7"
+git-tree-sha1 = "2fc2e1ab606a5dca7bbad9036a694553c3a57926"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.0.2"
+version = "1.0.3"
 
 [[Revise]]
 deps = ["CodeTracking", "Distributed", "FileWatching", "JuliaInterpreter", "LibGit2", "LoweredCodeUtils", "OrderedCollections", "Pkg", "REPL", "UUIDs", "Unicode"]
-git-tree-sha1 = "a860e786779be1ab6407d427470e1415711dd459"
+git-tree-sha1 = "d6b380e331f5ace89033617b575cfac40f9b312d"
 uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
-version = "2.7.5"
+version = "2.7.6"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"

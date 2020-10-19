@@ -1,11 +1,11 @@
 using ADCME
 
 PWD = pwd()
-cd("CustomOps")
-if !isdir("build")
-    mkdir("build")
+change_directory("$(@__DIR__)/CustomOps/build")
+require_file("build.ninja") do 
+    ADCME.cmake()
 end
-cd("build")
-ADCME.cmake()
-ADCME.make()
+require_library("ADSeismic") do 
+    ADCME.make()
+end
 cd(PWD)

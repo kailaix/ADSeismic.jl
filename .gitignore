@@ -37,3 +37,4 @@ examples/mpi_acoustic/data/*.jld2
 *.pdf 
 *.png
 *.gif
+!test/runtests.jl

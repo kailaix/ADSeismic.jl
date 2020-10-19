@@ -1,7 +1,7 @@
 name = "ADSeismic"
 uuid = "65edcd7e-b178-4558-a546-bf867610404b"
 authors = ["Kailai Xu <kailaix@hotmail.com>", "Weiqiang Zhu <zhuwq@stanford.edu>"]
-version = "0.3.0"
+version = "0.4.0"
 
 [deps]
 ADCME = "07b341a0-ce75-57c6-b2de-414ffdc00be5"

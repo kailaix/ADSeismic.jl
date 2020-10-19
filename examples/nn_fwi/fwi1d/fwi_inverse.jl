@@ -16,13 +16,15 @@ idx_var = pml+Int(round(0.1/Δx))
 
 inv_sigmoid(y) = @. - log(1.0/y - 1.0)
 
-case = "fwi"
+# case = "fwi"
+case = "nnfwi"
 
 ## fwi
 if case == "fwi"
 if model == "step"
     var= Variable(zeros(N-1-idx_var)) + inv_sigmoid(1.3/2.0)
     var = -2.0*sigmoid(var)
+    # var= Variable(zeros(N-1-idx_var)) - 1.3
 elseif model == "slop"
     var = Variable(zeros(N-1-idx_var))
 end
@@ -106,10 +108,9 @@ loss2 = sum((E[:, idx_rcv[2]] - E_true[:, idx_rcv[2]])^2 * 1e-3)
 if case == "fwi"
     # loss += 1e3*reg_smooth + 0.0*reg_TV
     # case = string(case, "_reg_smooth")
-    loss += 1e2*reg_smooth + 1e2*reg_TV
-    case = string(case, "_reg1e2_smooth_TV")
+    loss += 1e2*reg_smooth + 1e5*reg_TV
+    case = string(case, "_reg1e2_smooth_TV_3")
 end
-
 
 if !ispath(joinpath("figures", model, case))
     mkpath(joinpath("figures", model, case))
@@ -186,8 +187,8 @@ function cb(vs, iter, loss)
         savefig(joinpath("figures", model, case, "fwi$(lpad(iter,5,"0")).png"), bbox_inch="tight")
         if (mod(iter, 200) == 1) 
         matwrite(joinpath("results", model, case, "fwi$(lpad(iter,5,"0")).mat"), 
-                 Dict("idx_rcv"=>idx_rcv, "idx_src"=>idx_src, "xE"=>xE, 
-                      "cH0"=>cH0, "cH_true"=>cH_true, "cH_est" => cH_est, 
+                 Dict("idx_rcv"=>idx_rcv, "idx_src"=>idx_src, "xE"=>xE, "xH"=>xH, 
+                      "cH0"=>cH0, "cH_true"=>cH_true, "cH_est" => cH_est, "NT"=>NT, "dt"=>Δt,
                       "E_true" => E_true, "E_est" => E_est))
         # writedlm(joinpath("results", model, case, "fwi$(lpad(iter,5,"0")).txt"), E_est)
         end

@@ -52,6 +52,7 @@ Z = Z[2:end-1]
 
 idx_rcv = [pml + Int(round(0.0/Δx))+2, pml + Int(round(1.0/Δx))+1]
 
+
 ## Anomaly
 model = "step"
 cH = ones(length(xH)) * 3.0

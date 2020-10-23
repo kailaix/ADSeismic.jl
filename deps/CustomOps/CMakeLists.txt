@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(TF_CUSTOM_OP)
 set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_FLAGS "--std=c++11")
 
 message("JULIA=${JULIA}")
 
@@ -53,7 +54,7 @@ link_directories(${LIBDIR})
 find_program(_nvidia_smi "nvidia-smi")
 if (_nvidia_smi)
   find_package(CUDA QUIET REQUIRED)
-  SET(CUDA_PROPAGATE_HOST_FLAGS ON)
+  SET(CUDA_NVCC_FLAGS "-std=c++11" "-O3" ${CUDA_NVCC_FLAGS};--expt-relaxed-constexpr)
   add_definitions(-DGOOGLE_CUDA)
   cuda_add_library(ADSeismic SHARED ReceiveOps/GetReceive.cpp ReceiveOps/GetReceive.cc  ReceiveOps/GetReceive.cu
                                 SourceOps/AddSource.cpp SourceOps/AddSource.cc 

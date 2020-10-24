@@ -35,6 +35,8 @@ __global__ void calculate_one_step_forward(
 
 
     if (i==0 || i==NX+1 || j==0 || j==NY+1){
+        if (i>=NX+1 || i<=0 || j>=NY+1 || j<=0)
+            return;
         u[IJ] = 0.0;
         phiout[IJ] = 0.0;
         psiout[IJ] = 0.0;

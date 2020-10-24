@@ -44,20 +44,23 @@ __global__ void calculate_one_step_forward(
     }
     if (i>=NX+1 || i<=0 || j>=NY+1 || j<=0)
         return;
-    
-    
 
-    u[IJ] = (2 - sigma[IJ]*tau[IJ]*dt*dt - 2*dt*dt/hx/hx * c[IJ] - 2*dt*dt/hy/hy * c[IJ]) * w[IJ] +
-            c[IJ] * (dt/hx)*(dt/hx)  *  (w[IpJ]+w[InJ]) +
-            c[IJ] * (dt/hy)*(dt/hy)  *  (w[IJp]+w[IJn]) +
+    double cIJ = c[IJ], woldIJ = wold[IJ], tauIJ = tau[IJ], sigmaIJ = sigma[IJ];
+
+    
+    
+    double u0 = (2 - sigmaIJ*tauIJ*dt*dt - 2*dt*dt/hx/hx * cIJ - 2*dt*dt/hy/hy * cIJ) * w[IJ] +
+            cIJ * (dt/hx)*(dt/hx)  *  (w[IpJ]+w[InJ]) +
+            cIJ * (dt/hy)*(dt/hy)  *  (w[IJp]+w[IJn]) +
             (dt*dt/(2.0*hx))*(phi[IpJ]-phi[InJ]) +
             (dt*dt/(2.0*hy))*(psi[IJp]-psi[IJn]) -
-                (1 - (sigma[IJ]+tau[IJ])*dt/2) * wold[IJ];
-    u[IJ] = u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
-    phiout[IJ] = (1. -dt*sigma[IJ]) * phi[IJ] + dt * c[IJ] * (tau[IJ] -sigma[IJ])/2.0/hx *  
+                (1 - (sigmaIJ+tauIJ)*dt/2) * woldIJ;
+    u[IJ] = u0 / (1 + (sigmaIJ+tauIJ)/2*dt);
+    phiout[IJ] = (1. -dt*sigmaIJ) * phi[IJ] + dt * cIJ * (tauIJ -sigmaIJ)/2.0/hx *  
         (w[IpJ]-w[InJ]);
-    psiout[IJ] = (1. -dt*tau[IJ]) * psi[IJ] + dt * c[IJ] * (sigma[IJ] -tau[IJ])/2.0/hy * 
+    psiout[IJ] = (1. -dt*tauIJ) * psi[IJ] + dt * cIJ * (sigmaIJ -tauIJ)/2.0/hy * 
         (w[IJp]-w[IJn]);
+    
 }
 
 

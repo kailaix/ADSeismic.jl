@@ -486,6 +486,29 @@ function acoustic_one_step_customop(param::AcousticPropagatorParams, w::PyObject
     set_shape(u, (param.NX+2)*(param.NY+2)), set_shape(φ, (param.NX+2)*(param.NY+2)), set_shape(ψ, (param.NX+2)*(param.NY+2))
 end
 
+function acoustic_one_step_customop_ref(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
+    Δt = param.DELTAT
+    hx, hy = param.DELTAX, param.DELTAY
+    IJ, IpJ, InJ, IJp, IJn, IpJp, IpJn, InJp, InJn =
+        param.IJ, param.IpJ, param.InJ, param.IJp, param.IJn, param.IpJp, param.IpJn, param.InJp, param.InJn
+        
+    u = (2 - σ[IJ]*τ[IJ]*Δt^2 - 2*Δt^2/hx^2 * c[IJ] - 2*Δt^2/hy^2 * c[IJ]) * w[IJ] +
+            c[IJ] * (Δt/hx)^2  *  (w[IpJ]+w[InJ]) +
+            c[IJ] * (Δt/hy)^2  *  (w[IJp]+w[IJn]) +
+            (Δt^2/(2hx))*(φ[IpJ]-φ[InJ]) +
+            (Δt^2/(2hy))*(ψ[IJp]-ψ[IJn]) -
+            (1 - (σ[IJ]+τ[IJ])*Δt/2) * wold[IJ] 
+    u = u / (1 + (σ[IJ]+τ[IJ])/2*Δt)
+    u = scatter_nd_ops(IJ, u, (param.NX+2)*(param.NY+2))
+    φ = (1. -Δt*σ[IJ]) * φ[IJ] + Δt * c[IJ] * (τ[IJ] -σ[IJ])/2hx *  
+        (w[IpJ]-w[InJ])
+    ψ = (1. -Δt*τ[IJ]) * ψ[IJ] + Δt * c[IJ] * (σ[IJ] -τ[IJ])/2hy * 
+        (w[IJp]-w[IJn])
+    φ = scatter_nd_ops(IJ, φ, (param.NX+2)*(param.NY+2))
+    ψ = scatter_nd_ops(IJ, ψ, (param.NX+2)*(param.NY+2))
+    u, φ, ψ
+end
+
 
 function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
     Δt = param.DELTAT
@@ -538,10 +561,15 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
     end
 
     function body(i, ta, tφ, tψ)
-        one_step_ = one_step
-        if param.USE_CUSTOM_ONE_STEP
+        
+        if param.PropagatorKernel==0
+            one_step_ = one_step
+        elseif param.PropagatorKernel==1
             @info "Use custom one step..."
             one_step_ = acoustic_one_step_customop
+        else 
+            @info "Use reference one step..."
+            one_step_ = acoustic_one_step_customop_ref
         end
         u, φ, ψ = one_step_(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c)
         srci, srcj, srcv = AcousticSourceAtTimeT(src, i-1)

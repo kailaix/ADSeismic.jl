@@ -27,11 +27,11 @@ __global__ void calculate_one_step_forward(
 ){
     int i = BX * blockIdx.x + threadIdx.x;
     int j = BY * blockIdx.y + threadIdx.y;
-    int IJ = j * (NX+2) + i;
-    int IpJ = j * (NX+2) + i + 1;
-    int InJ = j * (NX+2) + i - 1;
-    int IJp = (j+1) * (NX+2) + i;
-    int IJn = (j-1) * (NX+2) + i;
+    int IJ = i * (NY+2) + j;
+    int IpJ = i * (NY+2) + j + 1;
+    int InJ = i * (NY+2) + j - 1;
+    int IJp = (i+1) * (NY+2) + j;
+    int IJn = (i-1) * (NY+2) + j;
 
 
     if (i==0 || i==NX+1 || j==0 || j==NY+1){
@@ -92,11 +92,11 @@ __global__ void calculate_one_step_backward(
     if (i>=NX+1 || i<=0 || j>=NY+1 || j<=0)
         return;
     
-    int IJ = j * (NX+2) + i;
-    int IpJ = j * (NX+2) + i + 1;
-    int InJ = j * (NX+2) + i - 1;
-    int IJp = (j+1) * (NX+2) + i;
-    int IJn = (j-1) * (NX+2) + i;
+    int IJ = i * (NY+2) + j;
+    int IpJ = i * (NY+2) + j + 1;
+    int InJ = i * (NY+2) + j - 1;
+    int IJp = (i+1) * (NY+2) + j;
+    int IJn = (i-1) * (NY+2) + j;
 
     // u[IJ] = (2 - sigma[IJ]*tau[IJ]*dt*dt - 2*dt*dt/hx/hx * c[IJ] - 2*dt*dt/hy/hy * c[IJ]) * w[IJ] +
     //         c[IJ] * (dt/hx)*(dt/hx)  *  (w[IpJ]+w[InJ]) +

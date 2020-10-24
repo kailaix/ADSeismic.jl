@@ -110,7 +110,7 @@ end
     
     # display params
     IT_DISPLAY::Int64 = 0
-    USE_CUSTOM_ONE_STEP::Bool = false 
+    PropagatorKernel::Int64 = 0
 end
 
 mutable struct AcousticSource

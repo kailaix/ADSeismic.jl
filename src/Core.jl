@@ -472,7 +472,19 @@ end
 
 # todo:
 # one_step(::AcousticPropagatorParams, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject, ::PyCall.PyObject)
-
+function acoustic_one_step_customop(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
+    phi = φ
+    psi = ψ
+    sigma = σ
+    tau = τ
+    dt = param.DELTAT
+    hx, hy = param.DELTAX, param.DELTAY
+    nx, ny = param.NX, param.NY
+    acoustic_one_step_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic", "acoustic_one_step", multiple=true)
+    w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny = convert_to_tensor(Any[w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny], [Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Int64,Int64])
+    u, φ, ψ = acoustic_one_step_(w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny)
+    set_shape(u, (param.NX+2)*(param.NY+2)), set_shape(φ, (param.NX+2)*(param.NY+2)), set_shape(ψ, (param.NX+2)*(param.NY+2))
+end
 
 
 function one_step(param::AcousticPropagatorParams, w::PyObject, wold::PyObject, φ, ψ, σ::PyObject, τ::PyObject, c::PyObject)
@@ -526,8 +538,12 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
     end
 
     function body(i, ta, tφ, tψ)
-        
-        u, φ, ψ = one_step(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c)
+        one_step_ = one_step
+        if param.USE_CUSTOM_ONE_STEP
+            @info "Use custom one step..."
+            one_step_ = acoustic_one_step_customop
+        end
+        u, φ, ψ = one_step_(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c)
         srci, srcj, srcv = AcousticSourceAtTimeT(src, i-1)
 
         if param.IT_DISPLAY>0

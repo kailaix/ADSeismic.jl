@@ -72,6 +72,13 @@ mutable struct ElasticPropagator
     mem::PyObject
 end
 
+"""
+    AcousticPropagatorParams
+
+A struct to hold all acoustic propagator parameters. 
+
+`PropagatorKernel`: 0 - general implementation; 1 - optimized GPU implementation; 2 - optimized CPU implementation
+"""
 @with_kw mutable struct AcousticPropagatorParams
     # number of grids along x,y axis and time steps
     NX::Int64 = 101

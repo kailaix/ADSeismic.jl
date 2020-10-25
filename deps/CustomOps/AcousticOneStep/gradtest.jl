@@ -6,7 +6,7 @@ using Random
 Random.seed!(233)
 
 function acoustic_one_step(w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny)
-    acoustic_one_step_ = load_op_and_grad("./build/libAcousticOneStep","acoustic_one_step", multiple=true)
+    acoustic_one_step_ = load_op_and_grad("../build/libADSeismic.so","acoustic_one_step", multiple=true)
     w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny = convert_to_tensor(Any[w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny], [Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Int64,Int64])
     acoustic_one_step_(w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny)
 end
@@ -42,8 +42,9 @@ sess = Session(); init(sess)
 #       in the case of `multiple=true`, you also need to specify which component you are testings
 # gradient check -- v
 function scalar_function(x)
-    return sum(sum(acoustic_one_step(x,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny).^2))
+    return sum(sum(acoustic_one_step(w,x,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny).^2))
 end
+# w, psi 
 
 # psi, w
 
@@ -56,7 +57,7 @@ ms_ = Array{Any}(undef, 5)
 ys_ = Array{Any}(undef, 5)
 s_ = Array{Any}(undef, 5)
 w_ = Array{Any}(undef, 5)
-gs_ =  @. 1000 / 10^(1:5)
+gs_ =  @. 0.01 / 10^(1:5)
 
 for i = 1:5
     g_ = gs_[i]

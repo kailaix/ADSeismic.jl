@@ -27,13 +27,13 @@ model = x->AcousticPropagatorSolver(params, x, vp^2)
 Rs_ = compute_forward_GPU(model, src, rcv)
 sess = Session(); init(sess)
 
-ts = zeros(11)
-for i = 1:11
-    d = @timed Rs = run(sess, Rs_)
-    ts[i] = d[2]
-    @info "Test $i, time = $(ts[i])"
-end
-@info mean(ts[2:end])
+# ts = zeros(11)
+# for i = 1:11
+#     d = @timed Rs = run(sess, Rs_)
+#     ts[i] = d[2]
+#     @info "Test $i, time = $(ts[i])"
+# end
+# @info mean(ts[2:end])
 
 ## visualize_wavefield if needed
 ii = 1 # source number

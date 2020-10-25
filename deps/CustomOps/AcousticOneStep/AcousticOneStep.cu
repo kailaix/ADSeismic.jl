@@ -114,27 +114,58 @@ __global__ void calculate_one_step_backward(
 
     grad_w[IJ] += (2 - sigma[IJ]*tau[IJ]*dt*dt - 2*dt*dt/hx/hx * c[IJ] - 2*dt*dt/hy/hy * c[IJ]) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
 
-    __syncthreads();
-
-    grad_w[IpJ] += c[IJ] * (dt/hx)*(dt/hx) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) +
-                    dt * c[IJ] * (tau[IJ] -sigma[IJ])/2.0/hx * grad_phiout[IJ];
-    
-    grad_phi[IpJ] += (dt*dt/(2.0*hx)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
-    grad_psi[IJp] += (dt*dt/(2.0*hy)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
-    __syncthreads();
-    grad_phi[InJ] += -(dt*dt/(2.0*hx)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
-    grad_psi[IJn] += -(dt*dt/(2.0*hy)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
-    grad_w[InJ] += c[IJ] * (dt/hx)*(dt/hx) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) - 
-                   dt * c[IJ] * (tau[IJ] -sigma[IJ])/2.0/hx * grad_phiout[IJ];
-    __syncthreads();
     grad_phi[IJ] += (1. -dt*sigma[IJ]) * grad_phiout[IJ];
-    grad_psi[IJ] += (1. -dt*tau[IJ]) * grad_psiout[IJ];    
-    grad_w[IJp] +=  c[IJ] * (dt/hy)*(dt/hy) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) + 
-                        dt * c[IJ] * (sigma[IJ] -tau[IJ])/2.0/hy * grad_psiout[IJ];
+    grad_psi[IJ] += (1. -dt*tau[IJ]) * grad_psiout[IJ]; 
+
+
+
+    // grad_w[IpJ] += c[IJ] * (dt/hx)*(dt/hx) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) +
+    //                 dt * c[IJ] * (tau[IJ] -sigma[IJ])/2.0/hx * grad_phiout[IJ];
+    // grad_phi[IpJ] += (dt*dt/(2.0*hx)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
+    // grad_psi[IJp] += (dt*dt/(2.0*hy)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
+    // grad_phi[InJ] += -(dt*dt/(2.0*hx)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
+    // grad_psi[IJn] += -(dt*dt/(2.0*hy)) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt);
+    // grad_w[InJ] += c[IJ] * (dt/hx)*(dt/hx) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) - 
+    //                dt * c[IJ] * (tau[IJ] -sigma[IJ])/2.0/hx * grad_phiout[IJ];   
+    // grad_w[IJp] +=  c[IJ] * (dt/hy)*(dt/hy) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) + 
+    //                     dt * c[IJ] * (sigma[IJ] -tau[IJ])/2.0/hy * grad_psiout[IJ];
+    // grad_w[IJn] +=  c[IJ] * (dt/hy)*(dt/hy) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) -
+    //                 dt * c[IJ] * (sigma[IJ] -tau[IJ])/2.0/hy * grad_psiout[IJ];
 
     __syncthreads();
-    grad_w[IJn] +=  c[IJ] * (dt/hy)*(dt/hy) * grad_u[IJ] / (1 + (sigma[IJ]+tau[IJ])/2*dt) -
-                    dt * c[IJ] * (sigma[IJ] -tau[IJ])/2.0/hy * grad_psiout[IJ];
+
+    if (i>0){
+        grad_w[IJ] += c[InJ] * (dt/hx)*(dt/hx) * grad_u[InJ] / (1 + (sigma[InJ]+tau[InJ])/2*dt) +
+         dt * c[InJ] * (tau[InJ] -sigma[InJ])/2.0/hx * grad_phiout[InJ];
+        grad_phi[IJ] += (dt*dt/(2.0*hx)) * grad_u[InJ] / (1 + (sigma[InJ]+tau[InJ])/2*dt);
+    }
+
+    __syncthreads();
+    
+    
+    if (j>0){
+        grad_psi[IJ] += (dt*dt/(2.0*hy)) * grad_u[IJn] / (1 + (sigma[IJn]+tau[IJn])/2*dt);
+        grad_w[IJ] +=  c[IJn] * (dt/hy)*(dt/hy) * grad_u[IJn] / (1 + (sigma[IJn]+tau[IJn])/2*dt) + 
+                            dt * c[IJn] * (sigma[IJn] -tau[IJn])/2.0/hy * grad_psiout[IJn];
+    }
+
+    __syncthreads();
+        
+
+    if (i<NX+1){
+        grad_phi[IJ] += -(dt*dt/(2.0*hx)) * grad_u[IpJ] / (1 + (sigma[IpJ]+tau[IpJ])/2*dt);
+        grad_w[IJ] += c[IpJ] * (dt/hx)*(dt/hx) * grad_u[IpJ] / (1 + (sigma[IpJ]+tau[IpJ])/2*dt) - 
+                    dt * c[IpJ] * (tau[IpJ] -sigma[IpJ])/2.0/hx * grad_phiout[IpJ]; 
+    }
+
+    __syncthreads();
+        
+    
+    if (j<NY+1){
+        grad_w[IJ] +=  c[IJp] * (dt/hy)*(dt/hy) * grad_u[IJp] / (1 + (sigma[IJp]+tau[IJp])/2*dt) -
+                        dt * c[IJp] * (sigma[IJp] -tau[IJp])/2.0/hy * grad_psiout[IJp];
+        grad_psi[IJ] += -(dt*dt/(2.0*hy)) * grad_u[IJp] / (1 + (sigma[IJp]+tau[IJp])/2*dt);
+    }
     
     
 }

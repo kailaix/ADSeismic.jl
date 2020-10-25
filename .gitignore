@@ -40,3 +40,5 @@ examples/mpi_acoustic/data/*.jld2
 !test/runtests.jl
 
 CMakeFiles
+*build/
+*TestOp/

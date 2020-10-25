@@ -66,11 +66,12 @@ if (_nvidia_smi)
                                 ScatterNdOps/ScatterNdOps.cu
                                 ScatterNdOps/ScatterNdOps.cpp
                                 AcousticOneStep/AcousticOneStep.cpp
-                                AcousticOneStep/AcousticOneStep.cu)
+                                AcousticOneStep/AcousticOneStep.cu
+                                AcousticOneStepCpu/AcousticOneStepCpu.cpp)
 else()
   add_library(ADSeismic SHARED ReceiveOps/GetReceive.cpp ReceiveOps/GetReceive.cc 
         SourceOps/AddSource.cpp SourceOps/AddSource.cc ScatterAddOps/ScatterAddOps.cpp
-        ScatterNdOps/ScatterNdOps.cpp GatherOps/GatherOps.cpp)
+        ScatterNdOps/ScatterNdOps.cpp GatherOps/GatherOps.cpp AcousticOneStepCpu/AcousticOneStepCpu.cpp)
   add_definitions(-DNOGPU)
 endif()
 

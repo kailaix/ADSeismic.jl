@@ -29,14 +29,14 @@ if !ispath(result_dir)
   mkpath(result_dir)
 end
 loss_file = joinpath(result_dir, "loss_$(Dates.now()).txt")
-
+reset_default_graph()
 
 ################### Inversion using Automatic Differentiation #####################
 model_name = "models/marmousi2-model-smooth.mat"
 # model_name = "models/BP-model-smooth.mat"
 
 ## load model setting
-params = load_params(model_name, vp_ref=1000, PropagatorKernel=1)
+params = load_params(model_name, vp_ref=3e3, PropagatorKernel=2)
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
 vp = Variable(matread(model_name)["vp"])
@@ -71,7 +71,9 @@ opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate
 
 sess = Session(); init(sess)
 loss0 = run(sess, loss)
+g = run(sess, grad)[1]
 @info "Initial loss: ", loss0
+error()
 
 ## run inversion
 fp = open(loss_file, "w")

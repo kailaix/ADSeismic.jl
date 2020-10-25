@@ -38,5 +38,7 @@ examples/mpi_acoustic/data/*.jld2
 *.png
 *.gif
 !test/runtests.jl
+
+CMakeFiles
 *build/
 *TestOp/

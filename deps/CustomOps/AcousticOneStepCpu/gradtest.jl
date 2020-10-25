@@ -6,13 +6,12 @@ using Random
 Random.seed!(233)
 
 function acoustic_one_step(w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny)
-    acoustic_one_step_ = load_op_and_grad("../build/libADSeismic.so","acoustic_one_step", multiple=true)
+    acoustic_one_step_ = load_op_and_grad("../build/libADSeismic.so","acoustic_one_step_cpu", multiple=true)
     w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny = convert_to_tensor(Any[w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny], [Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Int64,Int64])
     acoustic_one_step_(w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny)
 end
 
 # TODO: specify your input parameters
-use_gpu()
 nx = 10
 ny = 10
 mask = ones(nx+2, ny+2)
@@ -41,7 +40,7 @@ sess = Session(); init(sess)
 #       in the case of `multiple=true`, you also need to specify which component you are testings
 # gradient check -- v
 function scalar_function(x)
-    return sum(sum(acoustic_one_step(w, wold,phi,psi,sigma,tau,x,dt,hx,hy,nx,ny).^2))
+    return sum(sum(acoustic_one_step(w, wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny).^2))
 end
 # w, psi 
 

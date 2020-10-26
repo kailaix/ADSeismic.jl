@@ -13,9 +13,12 @@ module ADSeismic
     using Printf
 
     np = PyNULL()
+    HAS_GPU = has_gpu()
+    HAS_MPI = has_mpi(false)
     function __init__()
         copy!(np, pyimport("numpy"))
     end
+    
 
     include("Struct.jl")
     include("Core.jl")

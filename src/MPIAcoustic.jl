@@ -45,6 +45,7 @@ export MPIAcousticPropagatorParams, MPIAcousticSource, MPIAcousticReceiver, MPIA
     # mpi 
     II::Int64 = -1 
     JJ::Int64 = -1
+    PropagatorKernel::Int64 = 0 # 0 - vanilla, 1 - optimized, 2 - reference 
 end
 
 """
@@ -243,6 +244,38 @@ function one_step(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObjec
 end
 
 
+function one_step_ref(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObject, 
+    φ, ψ, σ::PyObject, τ::PyObject, c::PyObject, i::PyObject)
+    n = param.n 
+    Δt = param.DELTAT
+    hx, hy = param.DELTAX, param.DELTAY
+    IJ, IpJ, InJ, IJp, IJn, IpJp, IpJn, InJp, InJn =
+        param.IJ, param.IpJ, param.InJ, param.IJp, param.IJn, param.IpJp, param.IpJn, param.InJp, param.InJn
+
+    c = reshape(c, (-1,))
+    w = reshape(mpi_halo_exchange(w, param.M, param.N, tag = 5*i, deps=cast(Float64, i)), (-1,))
+    wold = reshape(mpi_halo_exchange(wold, param.M, param.N, tag = 5*i+1, deps=w[1]), (-1,))
+    φ = reshape(mpi_halo_exchange(φ, param.M, param.N, tag = 5*i+2, deps=wold[1]), (-1,))
+    ψ = reshape(mpi_halo_exchange(ψ, param.M, param.N, tag = 5*i+3, deps=φ[1]), (-1,))
+
+    u = (2 - σ[IJ]*τ[IJ]*Δt^2 - 2*Δt^2/hx^2 * c - 2*Δt^2/hy^2 * c) * w[IJ] +
+            c * (Δt/hx)^2  *  (w[IpJ]+w[InJ]) +
+            c * (Δt/hy)^2  *  (w[IJp]+w[IJn]) +
+            (Δt^2/(2hx))*(φ[IpJ]-φ[InJ]) +
+            (Δt^2/(2hy))*(ψ[IJp]-ψ[IJn]) -
+            (1 - (σ[IJ]+τ[IJ])*Δt/2) * wold[IJ] 
+    u = u / (1 + (σ[IJ]+τ[IJ])/2*Δt)
+    φ = (1. -Δt*σ[IJ]) * φ[IJ] + Δt * c * (τ[IJ] -σ[IJ])/2hx *  (w[IpJ]-w[InJ])
+    ψ = (1. -Δt*τ[IJ]) * ψ[IJ] + Δt * c * (σ[IJ] -τ[IJ])/2hy * (w[IJp]-w[IJn])
+
+
+    φ = reshape(φ, (n, n))
+    ψ = reshape(ψ, (n, n))
+    u = reshape(u, (n, n))
+    u, φ, ψ
+end
+
+
 """
     MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MPIAcousticSource, c::Union{PyObject, Array{Float64, 2}})
 
@@ -272,7 +305,14 @@ function MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MP
 
     function body(i, ta, tφ, tψ)
         
-        u, φ, ψ = one_step(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c, i)
+        if param.PropagatorKernel==0
+            one_step_ = one_step 
+        elseif param.PropagatorKernel==1
+            one_step_ = one_step_ref 
+        else
+            error("Not implemented")
+        end
+        u, φ, ψ = one_step_(param, read(ta, i-1), read(ta, i-2), read(tφ, i-1), read(tψ, i-1), σij, τij, c, i)
         srci, srcj, srcv = AcousticSourceAtTimeT(src, i-1)
 
         if param.IT_DISPLAY>0
@@ -291,7 +331,6 @@ function MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MP
         i+1, ta_, tφ_, tψ_
     end
 
-    @info n, param.NSTEP
     tu = TensorArray(param.NSTEP+1; clear_after_read=false)
     tφ = TensorArray(param.NSTEP+1; clear_after_read=true)
     tψ = TensorArray(param.NSTEP+1; clear_after_read=true)

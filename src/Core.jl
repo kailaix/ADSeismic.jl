@@ -579,13 +579,13 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
         
         if param.PropagatorKernel==0
             one_step_ = one_step
-        elseif param.PropagatorKernel==1
+        elseif param.PropagatorKernel==1 && HAS_GPU
             @info "Use custom one step..."
             one_step_ = acoustic_one_step_customop
-        elseif param.PropagatorKernel==2
+        elseif param.PropagatorKernel==1 && !HAS_GPU
             @info "Use CPU custom one step..."
             one_step_ = acoustic_one_step_customop_cpu
-        elseif param.PropagatorKernel==3
+        elseif param.PropagatorKernel==2
             @info "Use reference one step..."
             one_step_ = acoustic_one_step_customop_ref
         end

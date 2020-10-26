@@ -4,7 +4,7 @@ export visualize_wavefield, plot_result, add_initial_model,
     sampling_compute_loss_and_grads_GPU, 
     sampling_compute_loss_and_grads_GPU_v2,
     sampling_compute_loss_and_grads_GPU_v3,
-    visualize_model
+    visualize_model, aggregate_wavefield
 
 function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams})
     
@@ -22,6 +22,17 @@ function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorP
     
 end
 
+function aggregate_wavefield(param::Union{MPIAcousticPropagatorParams, MPIElasticPropagatorParams}, vals::Array{Float64, 2}...)
+    M, N = param.M, param.N 
+    nt, m, n = size(vals[1])
+    Vals = zeros(nt, m*M, n*N)
+    for i = 1:M 
+        for j = 1:N 
+            Vals[:, (i-1)*m+1:i*m, (j-1)*n+1:j*n] = vals[k]
+        end
+    end
+    Vals
+end
 
 function visualize_wavefield(val::Array{Float64, 3}, 
     param::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams, MPIElasticPropagatorParams})

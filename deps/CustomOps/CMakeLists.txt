@@ -72,7 +72,8 @@ else()
   add_library(ADSeismic SHARED ReceiveOps/GetReceive.cpp ReceiveOps/GetReceive.cc 
         SourceOps/AddSource.cpp SourceOps/AddSource.cc ScatterAddOps/ScatterAddOps.cpp
         ScatterNdOps/ScatterNdOps.cpp GatherOps/GatherOps.cpp 
-        AcousticOneStepCpu/AcousticOneStepCpu.cpp MPIAcousticOneStepCpu/MpiAcousticOneStep.cpp)
+        AcousticOneStepCpu/AcousticOneStepCpu.cpp 
+        MPIAcousticOneStepCpu/MpiAcousticOneStep.cpp)
   add_definitions(-DNOGPU)
 endif()
 

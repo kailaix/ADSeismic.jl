@@ -7,10 +7,10 @@ using Statistics
 mpi_init()
 
 M = N = Int(round(sqrt(mpi_size())))
-n = 100
+n = 300
 @info M 
 param = MPIAcousticPropagatorParams(NX = n*M, NY = n*N, n = n,
-     Rcoef=0.2, DELTAX=10, DELTAY=10, DELTAT=0.05, NSTEP = 2000, PropagatorKernel = 1) 
+     Rcoef=0.2, DELTAX=10, DELTAY=10, DELTAT=0.05, NSTEP = 3, PropagatorKernel = 1) 
 compute_PML_Params!(param)
 
 srci = [n*param.M÷5]
@@ -42,13 +42,15 @@ MPISimulatedObservation!(propagator, receiver)
 
 sess = Session()
 
+
 u = run(sess, propagator.u)
-@save "data/dat$(mpi_rank())-$(mpi_size()).jld2" u
+# @save "data/dat$(mpi_rank())-$(mpi_size()).jld2" u
 
-
+run_profile(sess, propagator.u)
+save_profile("test.json")
 # for i = 1:11
 #     d = @timed run(sess, propagator.u)
 #     @info d[2]
 # end
 
-mpi_finalize()
+# mpi_finalize()

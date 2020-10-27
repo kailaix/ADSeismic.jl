@@ -14,7 +14,6 @@ void MpiAcousticOneStepCpuForward(const double*  w,
     double*  phiout,
     double*  psiout){
 
-// #pragma omp parallel for collapse(2)
     for(int i = 1; i < NX+1; i++){
       for(int j = 1; j < NY+1; j++){
           int IJ = i * (NY+2) + j;

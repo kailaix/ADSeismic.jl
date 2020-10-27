@@ -67,13 +67,20 @@ if (_nvidia_smi)
                                 ScatterNdOps/ScatterNdOps.cpp
                                 AcousticOneStep/AcousticOneStep.cpp
                                 AcousticOneStep/AcousticOneStep.cu
-                                AcousticOneStepCpu/AcousticOneStepCpu.cpp)
+                                AcousticOneStepCpu/AcousticOneStepCpu.cpp MPIAcousticOneStepCpu/MpiAcousticOneStep.cpp)
 else()
   add_library(ADSeismic SHARED ReceiveOps/GetReceive.cpp ReceiveOps/GetReceive.cc 
         SourceOps/AddSource.cpp SourceOps/AddSource.cc ScatterAddOps/ScatterAddOps.cpp
         ScatterNdOps/ScatterNdOps.cpp GatherOps/GatherOps.cpp 
-        AcousticOneStepCpu/AcousticOneStepCpu.cpp)
+        AcousticOneStepCpu/AcousticOneStepCpu.cpp MPIAcousticOneStepCpu/MpiAcousticOneStep.cpp)
   add_definitions(-DNOGPU)
+endif()
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    message("OPENMP Found")
+    target_link_libraries(ADSeismic OpenMP::OpenMP_CXX)
+    target_compile_options(ADSeismic PRIVATE -fopenmp)
 endif()
 
 set_property(TARGET ADSeismic PROPERTY POSITION_INDEPENDENT_CODE ON)

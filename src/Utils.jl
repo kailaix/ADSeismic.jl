@@ -22,18 +22,39 @@ function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorP
     
 end
 
-function aggregate_wavefield(param::Union{MPIAcousticPropagatorParams, MPIElasticPropagatorParams}, vals::Array{Float64, 2}...)
+function aggregate_wavefield(param::Union{MPIAcousticPropagatorParams, MPIElasticPropagatorParams}, vals::Array{Array{Float64, 3}, 1})
     M, N = param.M, param.N 
     nt, m, n = size(vals[1])
     Vals = zeros(nt, m*M, n*N)
+    k = 0
     for i = 1:M 
         for j = 1:N 
+            k += 1
             Vals[:, (i-1)*m+1:i*m, (j-1)*n+1:j*n] = vals[k]
         end
     end
     Vals
 end
 
+function visualize_wavefield(val::Array{Array{Float64, 3}, 1}, 
+    param::Union{MPIAcousticPropagatorParams, MPIElasticPropagatorParams})
+    val = aggregate_wavefield(param, val)
+    visualize_wavefield(val, param)
+end
+
+"""
+    visualize_wavefield(val::Array{Float64, 3}, 
+        param::Union{ElasticPropagatorParams,AcousticPropagatorParams})
+    visualize_wavefield(val::Array{Array{Float64, 3}, 1}, 
+        param::Union{MPIAcousticPropagatorParams, MPIElasticPropagatorParams})
+
+Visualizes the wavefield and returns the handle of the animation. You can save the animation to gif via 
+
+```julia
+p = visualize_wavefield(...)
+saveanim(p, "myfigure.gif")
+```
+"""
 function visualize_wavefield(val::Array{Float64, 3}, 
     param::Union{ElasticPropagatorParams,AcousticPropagatorParams, MPIAcousticPropagatorParams, MPIElasticPropagatorParams})
     

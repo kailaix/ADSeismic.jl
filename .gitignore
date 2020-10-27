@@ -42,3 +42,6 @@ examples/mpi_acoustic/data/*.jld2
 CMakeFiles
 *build/
 *TestOp/
+
+*.mat
+*.f90

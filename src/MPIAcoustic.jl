@@ -151,14 +151,16 @@ function pml_helper(x::Float64, y::Float64, param::MPIAcousticPropagatorParams)
 end
 
 
-function compute_PML_Params!(param::MPIAcousticPropagatorParams)
+function compute_PML_Params!(param::MPIAcousticPropagatorParams; check_mpi_size::Bool = true)
     NX, NY = param.NX, param.NY
     n = param.n
     r = mpi_rank()
     param.M = div(NX,n)
     param.N = div(NY,n)
     param.II, param.JJ = div(r, param.N)+1, mod(r, param.N)+1
-    @assert mpi_size() == param.M * param.N
+    if check_mpi_size
+        @assert mpi_size() == param.M * param.N
+    end
     @assert NX>0 && NY>0
     @assert mod(NX, n)==0 && mod(NY, n)==0
     
@@ -243,6 +245,54 @@ function one_step(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObjec
     u, φ, ψ
 end
 
+    
+
+
+function one_step_customop(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObject, 
+    φ, ψ, σ::PyObject, τ::PyObject, c::PyObject, i::PyObject)
+    n = param.n 
+    Δt = param.DELTAT
+    hx, hy = param.DELTAX, param.DELTAY
+    IJ, IpJ, InJ, IJp, IJn, IpJp, IpJn, InJp, InJn =
+        param.IJ, param.IpJ, param.InJ, param.IJp, param.IJn, param.IpJp, param.IpJn, param.InJp, param.InJn
+
+    c = reshape(c, (-1,))
+    w = reshape(mpi_halo_exchange(w, param.M, param.N, tag = 5*i, deps=cast(Float64, i)), (-1,))
+    wold = reshape(mpi_halo_exchange(wold, param.M, param.N, tag = 5*i+1, deps=w[1]), (-1,))
+    φ = reshape(mpi_halo_exchange(φ, param.M, param.N, tag = 5*i+2, deps=wold[1]), (-1,))
+    ψ = reshape(mpi_halo_exchange(ψ, param.M, param.N, tag = 5*i+3, deps=φ[1]), (-1,))
+
+
+    phi = φ
+    psi = ψ
+    sigma = σ
+    tau = τ
+    dt = param.DELTAT
+    hx, hy = param.DELTAX, param.DELTAY
+    nx, ny = n, n
+    mpi_acoustic_one_step_ = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","mpi_acoustic_one_step", multiple=true)
+    w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny = convert_to_tensor(Any[w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny], [Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Float64,Int64,Int64])
+    u, φ, ψ = mpi_acoustic_one_step_(w,wold,phi,psi,sigma,tau,c,dt,hx,hy,nx,ny)
+    u, φ, ψ = set_shape(u, n*n), set_shape(φ, n*n), set_shape(ψ, n*n)
+
+
+    # u = (2 - σ[IJ]*τ[IJ]*Δt^2 - 2*Δt^2/hx^2 * c - 2*Δt^2/hy^2 * c) * w[IJ] +
+    #         c * (Δt/hx)^2  *  (w[IpJ]+w[InJ]) +
+    #         c * (Δt/hy)^2  *  (w[IJp]+w[IJn]) +
+    #         (Δt^2/(2hx))*(φ[IpJ]-φ[InJ]) +
+    #         (Δt^2/(2hy))*(ψ[IJp]-ψ[IJn]) -
+    #         (1 - (σ[IJ]+τ[IJ])*Δt/2) * wold[IJ] 
+    # u = u / (1 + (σ[IJ]+τ[IJ])/2*Δt)
+    # φ = (1. -Δt*σ[IJ]) * φ[IJ] + Δt * c * (τ[IJ] -σ[IJ])/2hx *  (w[IpJ]-w[InJ])
+    # ψ = (1. -Δt*τ[IJ]) * ψ[IJ] + Δt * c * (σ[IJ] -τ[IJ])/2hy * (w[IJp]-w[IJn])
+
+
+    φ = reshape(φ, (n, n))
+    ψ = reshape(ψ, (n, n))
+    u = reshape(u, (n, n))
+    u, φ, ψ
+end
+
 
 function one_step_ref(param::MPIAcousticPropagatorParams, w::PyObject, wold::PyObject, 
     φ, ψ, σ::PyObject, τ::PyObject, c::PyObject, i::PyObject)
@@ -308,6 +358,10 @@ function MPIAcousticPropagatorSolver(param::MPIAcousticPropagatorParams, src::MP
         if param.PropagatorKernel==0
             one_step_ = one_step 
         elseif param.PropagatorKernel==1
+            @info "using custom op implementation"
+            one_step_ = one_step_customop 
+        elseif param.PropagatorKernel==2
+            @info "using reference implementation"
             one_step_ = one_step_ref 
         else
             error("Not implemented")

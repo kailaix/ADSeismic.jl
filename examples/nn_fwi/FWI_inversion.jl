@@ -10,36 +10,35 @@ using DelimitedFiles
 using Dates
 matplotlib.use("Agg")
 close("all")
-if has_gpu()
-  gpu = true
-else
-  gpu = false
-end
+
+gpu = has_gpu() ? true : false
 
 data_dir = "data/acoustic"
-if !ispath(data_dir)
-  mkpath(data_dir)
-end
-figure_dir = "figure/FWI/marmousi/"
-if !ispath(figure_dir)
-  mkpath(figure_dir)
-end
-result_dir = "result/FWI/marmousi/"
-if !ispath(result_dir)
-  mkpath(result_dir)
-end
+method = "FWI"
+
+figure_dir = string("figure/",method,"/marmousi/")
+result_dir = string("result/",method,"/marmousi/")
 loss_file = joinpath(result_dir, "loss_$(Dates.now()).txt")
-reset_default_graph()
+
+check_path(dir) = !ispath(data_dir) ? mkpath(dir) : nothing
+check_path(figure_dir)
+check_path(result_dir)
+check_path(model_dir)
 
 ################### Inversion using Automatic Differentiation #####################
-model_name = "models/marmousi2-model-smooth.mat"
+reset_default_graph()
+model_name = "models/marmousi2-model-smooth-large.mat"
 # model_name = "models/BP-model-smooth.mat"
 
 ## load model setting
-params = load_params(model_name, vp_ref=3e3, PropagatorKernel=2)
+params = load_params(model_name, vp_ref=3e3, PropagatorKernel=1)
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
-vp = Variable(matread(model_name)["vp"])
+vp0 = matread(model_name)["vp"]
+mask = matread(model_name)["mask"]
+
+vp = Variable(vp0)
+vp = mask .* vp + (1.0.-mask) .* vp0
 
 ## assemble acoustic propagator model
 model = x->AcousticPropagatorSolver(params, x, vp^2)
@@ -62,6 +61,7 @@ if gpu
 else
   [SimulatedObservation!(model(src[i]), rcv[i]) for i = 1:length(src)]
   loss = sum([sum((rcv[i].rcvv-Rs[i])^2) for i = 1:length(rcv)]) 
+  grad = gradients(loss)
 end
 
 global_step = tf.Variable(0, trainable=false)
@@ -71,20 +71,16 @@ opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate
 
 sess = Session(); init(sess)
 loss0 = run(sess, loss)
-g = run(sess, grad)[1]
 @info "Initial loss: ", loss0
-error()
 
 ## run inversion
 fp = open(loss_file, "w")
 write(fp, "0,$loss0\n")
 function callback(vs, iter, loss)
   if iter%10==0
-    if gpu
-      x = Array(reshape(vs[1:(params.NY+2)*(params.NX+2)], params.NY+2, params.NX+2))
-    else
-      x = vs[1]'
-    end
+
+    # x = Array(reshape(vs[1:(params.NY+2)*(params.NX+2)], params.NY+2, params.NX+2))
+    x = run(sess, vp)'
     clf()
     pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  x)
     axis("scaled")
@@ -104,13 +100,12 @@ end
 ## BFGS
 Optimize!(sess, loss, 10000, vars=[vp], grads=grad,  callback=callback)
 
-## ADAM
+## Adam
 # time = 0
 # for iter = 0:max_iter
-#   global time += @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed])
-#   callback(run(sess, vp)', iter, ls)
-#   println("   $iter\t$ls\t$lr")
-#   println(" * time: $time")
+#   t = @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed])
+#   callback(nothing, iter, ls)
+#   println("   $iter\t$ls\t$lr\t$t")
 # end
 
 close(fp)

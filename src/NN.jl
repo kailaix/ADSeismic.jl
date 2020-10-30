@@ -37,31 +37,39 @@ export Generator, sampleUQ
 #   return o
 # end
 
-function Generator(z, isTrain=true; base=4, ratio=1, vmin=nothing, vmax=nothing)
+function Generator(z, isTrain=true; base=1, ratio=1, vmin=nothing, vmax=nothing)
   local o
+  activation = tf.keras.activations.relu
+  activation = tf.keras.activations.tanh
+  activation = tf.keras.layers.LeakyReLU(alpha=0.1)
   variable_scope("generator") do
-    x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 16)(z)
-    x = tf.reshape(x, shape=[-1, Int(round(base * ratio)), base, 16])
-    x = tf.keras.activations.tanh(x)
+    x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 8, use_bias=false)(z)
+    x = tf.reshape(x, shape=[-1, Int(round(base * ratio)), base, 8])
+    x = activation(x)
+
+    # x = tf.keras.layers.Conv2DTranspose(64, (5,5), strides=(2, 2), padding="same", use_bias=false)(x)
+    # x = tf.pad(x, ((0,0), (1,2), (1,2), (0,0)), "REFLECT")
+    # x = tf.keras.layers.Conv2D(16, [4, 4], strides=(1, 1), padding="valid")(x)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
-    x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
+    x = activation(x)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-    x = tf.keras.layers.Conv2D(64, [4, 4], strides=(1, 1), padding="same")(x)
-    x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+    x = tf.keras.layers.Conv2D(64, [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
+    x = activation(x)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same")(x)
-    x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
+    x = tf.keras.layers.Conv2D(32, [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
+    x = activation(x)
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-    x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same")(x)
-    o = x
+    x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same", use_bias=true)(x)
 
     if !isnothing(vmax) && !isnothing(vmin)
-        o = (vmax - vmin) * (tf.keras.activations.tanh(x) - (-1))/2 + vmin
+        o = (vmax - vmin) * tf.keras.activations.sigmoid(x) + vmin
+    else
+        o = activation(x)
     end
     o = tf.squeeze(o)
     # o = cast(o, Float64)

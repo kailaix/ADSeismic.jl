@@ -7,11 +7,8 @@ using MAT
 using DelimitedFiles
 matplotlib.use("Agg")
 close("all")
-if has_gpu()
-  gpu = true
-else
-  gpu = false
-end
+
+gpu = has_gpu() ? true : false
 
 output_dir = "data/acoustic"
 if !ispath(output_dir)
@@ -19,8 +16,8 @@ if !ispath(output_dir)
 end
 
 ################### Generate synthetic data #####################
-model_name = "models/marmousi2-model-true.mat"
-# model_name = "models/marmousi2-model-smooth.mat"
+reset_default_graph()
+model_name = "models/marmousi2-model-true-large.mat"
 # model_name = "models/BP-model-true.mat"
 
 ## load model setting
@@ -56,4 +53,4 @@ end
 ii = 1 # source number
 u = run(sess, model(src[ii]).u)
 p = visualize_wavefield(u, params)
-saveanim(p, "wavefield.gif")
+saveanim(p, "marmousi-wavefield.gif")

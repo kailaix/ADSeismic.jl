@@ -23,7 +23,7 @@ model_name = "../../../examples/nn_fwi/models/marmousi2-model-true.mat"
 # model_name = "models/BP-model-true.mat"
 
 ## load model setting
-params = load_params(model_name, vp_ref=1000, PropagatorKernel=2)
+params = load_params(model_name, vp_ref=1000, PropagatorKernel=1)
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
 vp = constant(matread(model_name)["vp"])

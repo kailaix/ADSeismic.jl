@@ -45,3 +45,5 @@ CMakeFiles
 
 *.mat
 *.f90
+examples/benchmark0223/simulation.db
+

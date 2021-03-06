@@ -58,10 +58,10 @@ model = "step"
 cH = ones(length(xH)) * 3.0
 cH_init = copy(cH)
 cH[pml + Int(round(0.6/Δx)):end] .= 1.0
-# model = "slop"
-# cH = ones(length(xH)) * 2.0
-# cH_init = copy(cH)
-# cH[pml + Int(round(0.3/Δx)):end] = range(2.0, 3.0, length=length(cH[pml + Int(round(0.3/Δx)):end]))
+model = "slop"
+cH = ones(length(xH)) * 2.0
+cH_init = copy(cH)
+cH[pml + Int(round(0.3/Δx)):end] = range(2.0, 3.0, length=length(cH[pml + Int(round(0.3/Δx)):end]))
 
 
 cH_true = copy(cH)

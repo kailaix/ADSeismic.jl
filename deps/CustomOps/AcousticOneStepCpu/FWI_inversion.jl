@@ -64,10 +64,6 @@ else
   loss = sum([sum((rcv[i].rcvv-Rs[i])^2) for i = 1:length(rcv)]) 
 end
 
-global_step = tf.Variable(0, trainable=false)
-max_iter = 50000
-lr_decayed = tf.train.cosine_decay(1.0, global_step, max_iter)
-opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
 
 sess = Session(); init(sess)
 loss0 = run(sess, loss)
@@ -102,7 +98,7 @@ grad = gradients(loss, vp)
 
 run(sess, grad)
 ## BFGS
-# Optimize!(sess, loss, 10000, vars=[vp], grads=grad,  callback=callback)
+BFGS!(sess, loss, 10000)
 
 ## ADAM
 # time = 0

@@ -216,3 +216,6 @@ BFGS!(sess, loss, vars = [E, cH, loss1, loss2], callback = cb)
 #     end
 # end
 
+
+θ0 = run(sess, θ)
+matwrite("results/weight$model.mat", Dict("theta"=>θ0))

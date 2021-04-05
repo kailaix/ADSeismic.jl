@@ -41,7 +41,9 @@ If you want to use GPU for ADSeismic, you need to install the GPU-capable ADCME.
 ## Simple Example: Acoustic Wave Equation 
 
 We consider the acoustic wave equation 
+
 $$\frac{\partial^2 u }{\partial t^2} = \nabla \cdot (c^2 \nabla u) + f$$
+
 where $u$ is the displacement, $f$ is the source term, and $c$ is the spatially varying acoustic velocity. In numerical simulations, we apply the perfect matched layer (PML) boundary conditions so that the outgoing waves are damped near the boundary. This enables us to emulate an infinite space using a finite computational domain. A description of the numerical scheme could be found in this paper. [^pml]
 
 [^pml]: Grote, Marcus J., and Imbo Sim. "Efficient PML for the wave equation." arXiv preprint arXiv:1001.0319 (2010).
@@ -95,7 +97,9 @@ u = run(sess, model.u)
 
 
 In the inverse problem, we assume we can observe the wavefield $u(x, 40, t)$ for all $x$ and $t$. The unknown is the velocity model $c$. We can find the value of $c$ by solving the PDE-constrained optimization problem 
+
 $$\begin{aligned} \min_c &\; \sum_{} (u_h(x_i, 40, t_j) - u(x_i, 40, t_j))^2 \\ \text{s.t.} &\; F_h(u_h, c) = 0\end{aligned}$$
+
 Here $F_h(u_h, c)=0$ is the numerical discretization of the wave equation and $u_h$ is the numerical solution for **all** time steps. The following plot shows the signal we received:
 
 ![](./asset/index/signal.png)

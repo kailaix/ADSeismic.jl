@@ -580,7 +580,7 @@ function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::Acoustic
         if param.PropagatorKernel==0
             one_step_ = one_step
         elseif param.PropagatorKernel==1 && HAS_GPU
-            @info "Use custom one step..."
+            @info "Use GPU custom one step..."
             one_step_ = acoustic_one_step_customop
         elseif param.PropagatorKernel==1 && !HAS_GPU
             @info "Use CPU custom one step..."

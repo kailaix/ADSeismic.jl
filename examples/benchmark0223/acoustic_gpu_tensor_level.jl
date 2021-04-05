@@ -49,4 +49,4 @@ end
 time /= num_repeat
 t2 = time  
 
-insert_record("cpu_tensor", scale, t1, t2)
+insert_record("gpu_tensor", scale, t1, t2)

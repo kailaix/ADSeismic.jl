@@ -1,13 +1,17 @@
-using Revise
+# using Revise
 using ADCME
 using ADSeismic
 using PyPlot
 using DelimitedFiles
+include("database.jl")
+
+scale = 201
+
+if length(ARGS)==1
+    scale = parse(Int64, ARGS[1])
+end
 
 num_repeat = 3
-
-
-scale = 201 
 
 param = AcousticPropagatorParams(NX=scale, NY=scale, 
     NSTEP=100, DELTAT=1e-4,  DELTAX=1.0, DELTAY=1.0,
@@ -34,7 +38,7 @@ for i = 1:num_repeat
     global time += (@timed run(sess, model.u))[2]
 end
 time /= num_repeat
-@info time 
+t1 = time 
 
 time = 0
 for i = 1:num_repeat
@@ -42,4 +46,6 @@ for i = 1:num_repeat
     global time += (@timed run(sess, g))[2]
 end
 time /= num_repeat
-@info time 
+t2 = time 
+
+insert_record("gpu_simulation", scale, t1, t2)

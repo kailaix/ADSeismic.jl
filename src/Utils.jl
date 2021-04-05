@@ -19,6 +19,7 @@ function visualize_model(vp::Array{Float64, 2}, params::Union{ElasticPropagatorP
     xlabel("x (km)")
     ylabel("z (km)")
     gca().invert_yaxis()
+    tight_layout()
     
 end
 

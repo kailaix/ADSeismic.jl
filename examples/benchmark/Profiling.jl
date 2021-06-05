@@ -41,7 +41,7 @@ src = ElasticSource(srci, srcj, srctype, srcv)
 vp = 3300.
 vs = 3300. / 1.732
 rho = 2800.
-λ, ρ, μ = compute_default_properties(param.NX, param.NY, vp, vs, rho)
+λ, ρ, μ = compute_lame_parameters(param.NX, param.NY, vp, vs, rho)
 model = ElasticPropagatorSolver(param, src, ρ, λ, μ)
 
 sess = Session(); init(sess)

@@ -30,7 +30,7 @@ vp = constant(matread(model_name)["vp"])
 # rcv = [rcv[1]]
 
 ## assemble acoustic propagator model
-model = x->AcousticPropagatorSolver(params, x, vp^2)
+model = x->AcousticPropagatorSolver(params, x, vp)
 
 ## simulated wavefield 
 if gpu

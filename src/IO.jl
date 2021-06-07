@@ -100,9 +100,9 @@ function load_acoustic_model(filename::String; inv_vp::Bool = false, kwargs...)
                         NSTEP=d["nt"], DELTAX=d["dx"], 
                         DELTAY=d["dy"], DELTAT=d["dt"], kwargs...)
     if (@isdefined vp)
-        ap_fun = x->AcousticPropagatorSolver(param, x, vp^2)
+        ap_fun = x->AcousticPropagatorSolver(param, x, vp)
     else
-        vp = constant_or_variable(d["vp"], trainable = inv_vp, name="vp", mask=mask)^2
+        vp = constant_or_variable(d["vp"], trainable = inv_vp, name="vp", mask=mask)
         ap_fun = x->AcousticPropagatorSolver(param, x, vp)
     end
     @info "Successfully load acoustic model!"

@@ -41,7 +41,7 @@ vp = Variable(vp0)
 vp = mask .* vp + (1.0.-mask) .* vp0
 
 ## assemble acoustic propagator model
-model = x->AcousticPropagatorSolver(params, x, vp^2)
+model = x->AcousticPropagatorSolver(params, x, vp)
 
 ## load data
 std_noise = 0

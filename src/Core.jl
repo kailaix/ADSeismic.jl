@@ -561,7 +561,7 @@ AcousticPropagatorSolver(param::AcousticPropagatorParams, src::AcousticSource, c
 """
 function AcousticPropagatorSolver(param::AcousticPropagatorParams, src::AcousticSource, c::Union{PyObject, Array{Float64, 2}})
 
-    c = tf.reshape(convert_to_tensor(c), (-1,))
+    c = tf.reshape(convert_to_tensor(c), (-1,))^2 ## convert to c^2
     compute_PML_Params!(param)
 
     σij = constant(param.Σx'[:])
@@ -756,7 +756,7 @@ function pml_helper(x::Float64, y::Float64, param::AcousticPropagatorParams)
         d = abs(y-(param.DELTAY*(param.NY+1)-Ly))
         outy = ξy * (d/Ly - sin(2π*d/Ly)/(2π))
     end
-    
+
     return outx, outy
 end
 

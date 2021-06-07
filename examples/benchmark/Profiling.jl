@@ -17,7 +17,7 @@ srcv = reshape(rc, :, 1)
 src = AcousticSource(srci, srcj, srcv)
 
 C = 3300*ones(param.NX+2, param.NY+2)
-model = AcousticPropagatorSolver(param, src, C^2)
+model = AcousticPropagatorSolver(param, src, C)
 
 sess = Session(); init(sess)
 

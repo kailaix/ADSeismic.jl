@@ -76,7 +76,7 @@ vp_ckpt = add_initial_model(x, vp0)
 models = Array{Any}(undef, batch_size)
 for i = 1:batch_size
   vp = add_initial_model(x[i], vp0)
-  models[i] = x->AcousticPropagatorSolver(params, x, vp^2)
+  models[i] = x->AcousticPropagatorSolver(params, x, vp)
 end
 
 @pywith tf.device("/cpu:0") begin

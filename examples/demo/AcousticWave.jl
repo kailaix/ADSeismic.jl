@@ -22,4 +22,4 @@ sess = Session(); init(sess)
 u = run(sess, model.u)
 
 p = visualize_wavefield(u, param)
-saveanim(p, "acousitc-wavefield.gif")
+saveanim(p, "acoustic-wavefield.gif")

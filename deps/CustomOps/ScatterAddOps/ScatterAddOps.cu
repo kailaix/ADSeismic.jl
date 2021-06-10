@@ -32,6 +32,6 @@ __global__ void ScatterAddOps_backward_kernel(double *grad_ipt, double *grad_upd
      const double *out, const double *ipt, const long long *ii,
     const double *update, int d, int n){
     cudaMemcpy(grad_ipt, grad_out, sizeof(double)*d, cudaMemcpyDeviceToDevice);
-    ScatterAddOps_backward_kernel<<< (n-1)/64, 64 >>>(grad_ipt, grad_update, grad_out, out, ipt, ii, 
+    ScatterAddOps_backward_kernel<<< (n-1)/64 + 1, 64 >>>(grad_ipt, grad_update, grad_out, out, ipt, ii, 
                         update, d, n);
    }

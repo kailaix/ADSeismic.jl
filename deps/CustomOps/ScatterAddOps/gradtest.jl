@@ -6,7 +6,7 @@ using Random
 Random.seed!(233)
 
 function scatter_add_ops(ipt,ii,vv)
-    scatter_add_ops_ = load_op_and_grad("./build/libScatterAddOps","scatter_add_ops")
+    scatter_add_ops_ = load_op_and_grad("../build/libADSeismic.so","scatter_add_ops")
     ipt,ii,vv = convert_to_tensor(Any[ipt,ii,vv], [Float64,Int64,Float64])
     scatter_add_ops_(ipt,ii,vv)
 end

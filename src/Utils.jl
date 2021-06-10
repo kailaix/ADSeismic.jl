@@ -234,6 +234,15 @@ function compute_lame_parameters(NX::Int, NY::Int, vp::Float64, vs::Float64, rho
     λ, ρ, μ
 end
 
+function compute_lame_parameters(NX::Int, NY::Int, vp::Union{PyObject, Array{Float64,2}, Matrix{Float64}}, 
+                                                   vs::Union{PyObject, Array{Float64,2}, Matrix{Float64}}, 
+                                                   rho::Union{PyObject, Array{Float64,2}, Matrix{Float64}})
+    ρ = rho
+    μ = rho .* vs .* vs
+    λ = rho .* (vp .* vp - 2. * vs .* vs)
+    return λ, ρ, μ
+end
+
 function compute_lame_parameters(param::MPIElasticPropagatorParams, vp::Float64, vs::Float64, rho::Float64)
     compute_lame_parameters(param.n+2, param.n+2, vp, vs, rho)
 end

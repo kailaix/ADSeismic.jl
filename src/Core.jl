@@ -27,6 +27,7 @@ function scatter_nd_ops(ii,vv,m)
     # vector(ii, vv, m)
 end
 
+
 function ElasticPropagatorSolver(param::ElasticPropagatorParams, src::ElasticSource, 
     ρ::Union{PyObject, Array{Float64, 2}}, λ::Union{PyObject, Array{Float64, 2}}, μ::Union{PyObject, Array{Float64, 2}})
     ρ = tf.reshape(convert_to_tensor(ρ),(-1,))
@@ -59,7 +60,7 @@ function ElasticPropagatorSolver(param::ElasticPropagatorParams, src::ElasticSou
         srci,srcj,srctype,srcv = ElasticSourceAtTimeT(src, i-1) 
         σxx, σyy, σxy,vx, vy, mem = one_step(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
             ax, bx, ay, by, kx, ky, srci, srcj, srcv, srctype)
-
+        
         sigmaxx_arr,sigmayy_arr,sigmaxy_arr,vx_arr,vy_arr = 
             write(sigmaxx_arr, i, σxx), write(sigmayy_arr, i, σyy), write(sigmaxy_arr, i, σxy),
                     write(vx_arr, i, vx), write(vy_arr, i, vy)
@@ -74,12 +75,13 @@ function ElasticPropagatorSolver(param::ElasticPropagatorParams, src::ElasticSou
             i = bind(i, op)
         end
 
+        
         i+1, vx_arr, vy_arr, sigmaxx_arr, sigmayy_arr, sigmaxy_arr, mem_arr_...
     end
     i = constant(2, dtype=Int32)
 
     _, vx_arr, vy_arr, sigmaxx_arr, sigmayy_arr, sigmaxy_arr, mem_arrs = 
-        while_loop(condition, body, [i, vx_arr, vy_arr, sigmaxx_arr, sigmayy_arr, sigmaxy_arr, mem_arr...])
+        while_loop(condition, body, [i, vx_arr, vy_arr, sigmaxx_arr, sigmayy_arr, sigmaxy_arr, mem_arr...]; parallel_iterations = 1)
     
     vx = tf.reshape(stack(vx_arr), (param.NSTEP+1, param.NX+2, param.NY+2))
     vy = tf.reshape(stack(vy_arr), (param.NSTEP+1, param.NX+2, param.NY+2))
@@ -212,7 +214,6 @@ end
 
 function one_step(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
     ax, bx, ay, by, kx, ky, srci, srcj, srcv, srctype)
-    add_source = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","add_source", multiple=true)
     vx, vy, σxx, σyy, σxy,mem = fw1(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
                     ax, bx, ay, by, kx, ky)
     vx, vy, σxx, σyy, σxy,mem = fw2(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
@@ -221,6 +222,7 @@ function one_step(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy
                     ax, bx, ay, by, kx, ky)
     vx, vy, σxx, σyy, σxy,mem = fw4(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,
                     ax, bx, ay, by, kx, ky)    
+    add_source = load_op_and_grad("$(@__DIR__)/../deps/CustomOps/build/libADSeismic","add_source", multiple=true)
     σxx, σyy, σxy,vx, vy  = add_source(σxx, σyy, σxy,vx,vy,srci,srcj,srctype,constant(param.NX),constant(param.NY),srcv)
     return σxx, σyy, σxy,vx, vy, mem
 end

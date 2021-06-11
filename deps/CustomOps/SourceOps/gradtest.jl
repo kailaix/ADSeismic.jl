@@ -5,12 +5,12 @@ using PyPlot
 using Random
 Random.seed!(233)
 
-add_source = load_op_and_grad("./build/libAddSource","add_source", multiple=true)
+add_source = load_op_and_grad("../build/libADSeismic","add_source", multiple=true)
 ################## End Load Operator ##################
 # tf.debugging.set_log_device_placement(true)
 # TODO: specify your input parameters
-nx = 5
-ny = 5
+nx = 20
+ny = 20
 sigmaxx = constant(ones((nx+2)*(ny+2)))
 sigmayy = constant(ones((nx+2)*(ny+2)))
 sigmaxy = constant(ones((nx+2)*(ny+2)))
@@ -30,7 +30,8 @@ run(sess, u)
 # TODO: change your test parameter to `m`
 # gradient check -- v
 function scalar_function(m)
-    return sum(add_source(sigmaxx,sigmaxy,sigmayy,vx,vy,srci,srcj,srctype,constant(nx),constant(ny),m)[1])
+    c = sum(m^2)
+    return sum(sum.(add_source(sigmaxx + c,sigmaxy + c,sigmayy + c,vx + c,vy + c,srci,srcj,srctype,constant(nx),constant(ny),m).^2))
 end
 
 # TODO: change `m_` and `v_` to appropriate values
@@ -66,3 +67,4 @@ plt.gca().invert_xaxis()
 legend()
 xlabel("\$\\gamma\$")
 ylabel("Error")
+savefig("gradtest.png")

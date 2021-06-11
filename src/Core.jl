@@ -226,8 +226,6 @@ function one_step(param::ElasticPropagatorParams, ρ, λ, μ, vx, vy, σxx, σyy
 end
 
 
-
-
 function compute_PML_Params(param::ElasticPropagatorParams)
     ## define profile of absorption in PML region
     NPOINTS_PML = param.NPOINTS_PML

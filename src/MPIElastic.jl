@@ -1,5 +1,5 @@
 export MPIElasticPropagatorParams, MPIElasticSource, MPIElasticReceiver, MPIElasticPropagator, compute_PML_Params!,
-        MPIElasticPropagatorSolver, MPISimulatedObservation!, MPIElasticReceiver
+        MPIElasticPropagatorSolver, MPISimulatedObservation!, MPIElasticReceiver, extract_local_patch
 @with_kw mutable struct MPIElasticPropagatorParams
     # number of grids along x,y axis and time steps
     NX::Int64 = 0
@@ -151,6 +151,11 @@ function get_mpi_id2(a, b, n)
         end
     end
     idx
+end
+
+function extract_local_patch(param::MPIElasticPropagatorParams, v::Union{PyObject, Array{Float64,2}})
+    v = v[(param.II - 1) * param.n + 1:param.II * param.n, (param.JJ - 1) * param.n + 1:param.JJ * param.n]
+    v = mpi_halo_exchange2(v, param.M, param.N)
 end
 
 function compute_PML_Params!(param::MPIElasticPropagatorParams)

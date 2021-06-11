@@ -231,16 +231,15 @@ function compute_lame_parameters(NX::Int, NY::Int, vp::Float64, vs::Float64, rho
             λ[i,j] = rho*(vp*vp - 2. * vs*vs)
         end
     end
-    λ, ρ, μ
+    λ, μ, ρ
 end
 
-function compute_lame_parameters(NX::Int, NY::Int, vp::Union{PyObject, Array{Float64,2}, Matrix{Float64}}, 
-                                                   vs::Union{PyObject, Array{Float64,2}, Matrix{Float64}}, 
-                                                   rho::Union{PyObject, Array{Float64,2}, Matrix{Float64}})
+function compute_lame_parameters(vp::Union{PyObject, Array{Float64,2}}, vs::Union{PyObject, Array{Float64,2}}, 
+                                 rho::Union{PyObject, Array{Float64,2}})
     ρ = rho
     μ = rho .* vs .* vs
     λ = rho .* (vp .* vp - 2. * vs .* vs)
-    return λ, ρ, μ
+    return λ, μ, ρ
 end
 
 function compute_lame_parameters(param::MPIElasticPropagatorParams, vp::Float64, vs::Float64, rho::Float64)
@@ -248,7 +247,8 @@ function compute_lame_parameters(param::MPIElasticPropagatorParams, vp::Float64,
 end
 
 function compute_properties(vp::Union{PyObject, Array{Float64}}, 
-        vs::Union{PyObject, Array{Float64}}, ρ::Union{PyObject, Array{Float64}})
+                            vs::Union{PyObject, Array{Float64}}, 
+                            ρ::Union{PyObject, Array{Float64}})
     vs = convert_to_tensor(vs)
     vp = convert_to_tensor(vp)
     ρ = convert_to_tensor(ρ)

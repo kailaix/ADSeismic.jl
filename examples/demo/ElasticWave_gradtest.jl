@@ -22,7 +22,7 @@ rho = 2800. * ones(param.NX+2, param.NY+2)
 vp0 = vp
 vp_ = Variable(vp[:])
 vp = reshape(vp_, (152,152))
-λ, ρ, μ = compute_lame_parameters(param.NX, param.NY, vp, vs, rho)
+λ, μ, ρ = compute_lame_parameters(param.NX, param.NY, vp, vs, rho)
 model = ElasticPropagatorSolver(param, src, ρ, λ, μ)
 
 sess = Session(); init(sess)    

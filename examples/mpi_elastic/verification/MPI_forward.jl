@@ -14,7 +14,7 @@ compute_PML_Params!(param)
 vp = 3300.
 vs = 3300. / 1.732
 rho = 2800.
-λ, ρ, μ = compute_lame_parameters(param, vp, vs, rho)
+λ, μ, ρ = compute_lame_parameters(param, vp, vs, rho)
 source = Ricker(param, 50.0, 200.0) 
 
 # close("all")

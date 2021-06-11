@@ -13,12 +13,17 @@ srci = [param.NX ÷ 2]
 srcj = [param.NY ÷ 2]
 srctype = [0] #0: velocity; 1: stress
 srcv = reshape(source, :, 1)
+
+# srci = [param.NX ÷ 2, param.NX ÷ 2]
+# srcj = [param.NY ÷ 2, param.NY ÷ 2]
+# srctype = [2,3]
+# srcv = tf.concat([reshape(source, :, 1), reshape(source, :, 1)],1)
 src = ElasticSource(srci, srcj, srctype, srcv)
 
 vp = 3000.
 vs = vp / 1.732
 rho = 2800.
-λ, ρ, μ = compute_lame_parameters(param.NX, param.NY, vp, vs, rho)
+λ, μ, ρ = compute_lame_parameters(param.NX, param.NY, vp, vs, rho)
 model = ElasticPropagatorSolver(param, src, ρ, λ, μ)
 
 sess = Session(); init(sess)    

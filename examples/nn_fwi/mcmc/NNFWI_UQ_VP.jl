@@ -61,7 +61,7 @@ end
 
 ## assemble acoustic propagator model
 x_var = Variable(ones(size(vp0)...)) 
-model = x->AcousticPropagatorSolver(params, x, x_var^2)
+model = x->AcousticPropagatorSolver(params, x, x_var)
 vars = get_collection()
 
 ## load data

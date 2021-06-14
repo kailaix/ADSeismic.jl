@@ -13,6 +13,12 @@ function load_params(filename::String, option::String="Acoustic"; kwargs...)
         param = ElasticPropagatorParams(NX=d["nx"]-2, NY=d["ny"]-2,
                         NSTEP=d["nt"], DELTAX=d["dx"], 
                         DELTAY=d["dy"], DELTAT=d["dt"]; kwargs...)
+    elseif option == "MPIElastic"
+        param = MPIElasticPropagatorParams(NX=d["nx"], NY=d["ny"], n=d["node_per_cpu"], NSTEP=d["nt"], 
+                                           DELTAT=d["dt"], DELTAX=d["dx"], DELTAY=d["dy"],
+                                           M = d["nx"] ÷ d["node_per_cpu"], N = d["ny"] ÷ d["node_per_cpu"]; 
+                                           kwargs...)
+        # compute_PML_Params!(param)
     else
         error("option should be either Acoustic or Elastic!");
     end
@@ -38,25 +44,36 @@ function load_elastic_model(filename::String;
     ep_fun
 end
 
-
-function load_elastic_receiver(filename::String)
+function load_elastic_receiver(filename::String; use_mpi::Bool=false, param=missing)
     d = matread(filename)
     rcv = d["receiver"]
     if length(rcv)==0
         return ElasticReceiver[]
     end
-    out = Array{ElasticReceiver}(undef, length(rcv))
+    if use_mpi
+        out = Array{MPIElasticReceiver}(undef, length(rcv))
+    else
+        out = Array{ElasticReceiver}(undef, length(rcv))
+    end
     for i = 1:length(rcv)
-        out[i] = ElasticReceiver(safe_vec(rcv[i]["ix"]), safe_vec(rcv[i]["iy"]), safe_vec(rcv[i]["type"]))
+        if use_mpi
+            out[i] = MPIElasticReceiver(param, safe_vec(rcv[i]["ix"]), safe_vec(rcv[i]["iy"]), safe_vec(rcv[i]["type"]))
+        else
+            out[i] = ElasticReceiver(safe_vec(rcv[i]["ix"]), safe_vec(rcv[i]["iy"]), safe_vec(rcv[i]["type"]))
+        end
     end
     @info "Successfully load elastic receiver!"
     out
 end
 
-function load_elastic_source(filename::String)
+function load_elastic_source(filename::String; use_mpi::Bool=false, param=missing)
     d = matread(filename)
     src = d["source"]
-    out = Array{ElasticSource}(undef, length(src))
+    if use_mpi
+        out = Array{MPIElasticSource}(undef, length(src))
+    else
+        out = Array{ElasticSource}(undef, length(src))
+    end
     for i = 1:length(src)
         if length(size(src[i]["vec"]))==1
             src[i]["vec"] = reshape(src[i]["vec"], :, 1)
@@ -65,7 +82,11 @@ function load_elastic_source(filename::String)
             src[i]["vec"] = Array(src[i]["vec"]')
         end
         @assert d["nt"] == size(src[i]["vec"], 1)
-        out[i] = ElasticSource(safe_vec(src[i]["ix"]), safe_vec(src[i]["iy"]), safe_vec(src[i]["type"]), src[i]["vec"])
+        if use_mpi
+            out[i] = MPIElasticSource(param, safe_vec(src[i]["ix"]), safe_vec(src[i]["iy"]), safe_vec(src[i]["type"]), src[i]["vec"])
+        else
+            out[i] = ElasticSource(safe_vec(src[i]["ix"]), safe_vec(src[i]["iy"]), safe_vec(src[i]["type"]), src[i]["vec"])
+        end
     end
     @info "Successfully load elastic source!"
     out
@@ -100,9 +121,9 @@ function load_acoustic_model(filename::String; inv_vp::Bool = false, kwargs...)
                         NSTEP=d["nt"], DELTAX=d["dx"], 
                         DELTAY=d["dy"], DELTAT=d["dt"], kwargs...)
     if (@isdefined vp)
-        ap_fun = x->AcousticPropagatorSolver(param, x, vp^2)
+        ap_fun = x->AcousticPropagatorSolver(param, x, vp)
     else
-        vp = constant_or_variable(d["vp"], trainable = inv_vp, name="vp", mask=mask)^2
+        vp = constant_or_variable(d["vp"], trainable = inv_vp, name="vp", mask=mask)
         ap_fun = x->AcousticPropagatorSolver(param, x, vp)
     end
     @info "Successfully load acoustic model!"

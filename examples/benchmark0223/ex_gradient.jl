@@ -18,7 +18,7 @@ src = AcousticSource(srci, srcj, srcv)
 
 
 C = Variable(3300*ones(param.NX+2, param.NY+2))
-model = AcousticPropagatorSolver(param, src, C^2)
+model = AcousticPropagatorSolver(param, src, C)
 @load "data.jld2" u 
 
 U = model.u

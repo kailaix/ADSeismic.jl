@@ -1,5 +1,5 @@
 export visualize_wavefield, plot_result, add_initial_model,
-    Ricker, Gauss, compute_default_properties, 
+    Ricker, Gauss, compute_lame_parameters, 
     gradtest, compute_loss_and_grads_GPU, compute_forward_GPU, variable_source, 
     sampling_compute_loss_and_grads_GPU, 
     sampling_compute_loss_and_grads_GPU_v2,
@@ -73,7 +73,7 @@ function visualize_wavefield(val::Array{Float64, 3},
 
     function update(i)
         pl[:set_data](val[i,:,:]')
-        t.set_text("Time = $(round((i-1)*param.DELTAT, digits=2))")
+        t.set_text("Time = $(round((i-1)*param.DELTAT, digits=3))")
     end
     p = animate(update, [2:dt:size(val, 1);])
 
@@ -220,7 +220,7 @@ function Gauss(epp::Union{ElasticPropagatorParams, AcousticPropagatorParams, MPI
 end
 
 
-function compute_default_properties(NX::Int, NY::Int, vp::Float64, vs::Float64, rho::Float64)
+function compute_lame_parameters(NX::Int, NY::Int, vp::Float64, vs::Float64, rho::Float64)
     λ = zeros(NX+2, NY+2)
     μ = zeros(NX+2, NY+2)
     ρ = zeros(NX+2, NY+2)
@@ -231,15 +231,24 @@ function compute_default_properties(NX::Int, NY::Int, vp::Float64, vs::Float64, 
             λ[i,j] = rho*(vp*vp - 2. * vs*vs)
         end
     end
-    λ, ρ, μ
+    λ, μ, ρ
 end
 
-function compute_default_properties(param::MPIElasticPropagatorParams, vp::Float64, vs::Float64, rho::Float64)
-    compute_default_properties(param.n+2, param.n+2, vp, vs, rho)
+function compute_lame_parameters(vp::Union{PyObject, Array{Float64,2}}, vs::Union{PyObject, Array{Float64,2}}, 
+                                 rho::Union{PyObject, Array{Float64,2}})
+    ρ = rho
+    μ = rho .* vs .* vs
+    λ = rho .* (vp .* vp - 2. * vs .* vs)
+    return λ, μ, ρ
+end
+
+function compute_lame_parameters(param::MPIElasticPropagatorParams, vp::Float64, vs::Float64, rho::Float64)
+    compute_lame_parameters(param.n+2, param.n+2, vp, vs, rho)
 end
 
 function compute_properties(vp::Union{PyObject, Array{Float64}}, 
-        vs::Union{PyObject, Array{Float64}}, ρ::Union{PyObject, Array{Float64}})
+                            vs::Union{PyObject, Array{Float64}}, 
+                            ρ::Union{PyObject, Array{Float64}})
     vs = convert_to_tensor(vs)
     vp = convert_to_tensor(vp)
     ρ = convert_to_tensor(ρ)

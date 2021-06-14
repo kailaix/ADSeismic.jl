@@ -76,7 +76,7 @@ x = x * std_vp0
 vp = add_initial_model(x, vp0)
 
 ## assemble acoustic propagator model
-model = x->AcousticPropagatorSolver(params, x, vp^2)
+model = x->AcousticPropagatorSolver(params, x, vp)
 vars = get_collection()
 
 ## load data

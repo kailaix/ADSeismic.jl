@@ -89,7 +89,7 @@ for k = 1:3
 end
 
 C = placeholder(3300*layers)
-model = AcousticPropagatorSolver(param, src, C^2)
+model = AcousticPropagatorSolver(param, src, C)
 
 sess = Session(); init(sess)
 u = run(sess, model.u)
@@ -127,7 +127,7 @@ src = AcousticSource(srci, srcj, srcv)
 
 
 C = Variable(3300*ones(param.NX+2, param.NY+2))
-model = AcousticPropagatorSolver(param, src, C^2)
+model = AcousticPropagatorSolver(param, src, C)
 @load "data.jld2" u 
 
 U = model.u

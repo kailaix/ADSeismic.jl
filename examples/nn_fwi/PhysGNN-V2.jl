@@ -76,7 +76,7 @@ models = Array{Any}(undef, nsrc, batch_size)
 for i = 1:nsrc
   for j = 1:batch_size
     vp = vp0 + tf.slice(x[j], (size(x[j]).-size(vp0)).÷2, size(vp0))
-    models[i,j] = x->AcousticPropagatorSolver(params, x, vp^2)
+    models[i,j] = x->AcousticPropagatorSolver(params, x, vp)
   end
 end
 

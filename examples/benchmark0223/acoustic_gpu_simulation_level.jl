@@ -24,7 +24,7 @@ srcv = reshape(rc, :, 1)
 src = AcousticSource(srci, srcj, srcv)
 
 C = placeholder(3300*ones(param.NX+2, param.NY+2))
-model = AcousticPropagatorSolver(param, src, C^2)
+model = AcousticPropagatorSolver(param, src, C)
 
 loss = sum(model.u^2)
 g = gradients(loss, C)

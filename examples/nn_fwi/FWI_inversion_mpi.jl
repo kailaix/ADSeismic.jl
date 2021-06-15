@@ -71,15 +71,24 @@ rho = extract_local_patch(param, rho)
 src = load_elastic_source(model_name, use_mpi=true, param=param)
 receiver = load_elastic_receiver(model_name, use_mpi=true, param=param)
 
-rcvv = Rs[1]
-for i = 1:4
+Rs_ = []
+Vs_ = []
 
+# for i = 1:length(src)
+for i = 1:2
+  
+  rcvv = Rs[i]
   src_ = src[i]
   receiver_ = receiver[i]
 
-  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ; dep = length(Rs_)==0 ? nothing : sum(Rs_[end]))
+  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ; tag_offset = i*100000, dep = length(Vs_)==0 ? nothing : sum(Vs_[end]))
+  # propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ)
   MPISimulatedObservation!(propagator, receiver_)
+  
+  push!(Rs_, receiver_.rcvv)
+  push!(Vs_, propagator.vx)
 
+  local_loss = sum(propagator.vx[end,:]) * 1e-20
   if !isnothing(rcvv)
       global local_loss += sum((receiver_.rcvv - rcvv )^2) 
   end
@@ -89,7 +98,8 @@ end
 loss = mpi_sum(local_loss) * 1e7
 g = gradients(loss, vp_)
 
-sess = Session(config=config_proto); init(sess)
+# sess = Session(config=config_proto); init(sess)
+sess = Session(); init(sess)
 
 @info "running loss"
 run(sess, loss)
@@ -110,13 +120,14 @@ iter_result = Array{Float64, 2}[]
 function calculate_gradients(G, x)
     x = reshape(x, var_size)
     G[:] = run(sess, g, vp_=>x)
-
-    global iter += 1
-    if iter % 100 == 1
+    if iter % 1 == 0
       clf()
       pcolormesh(x', cmap="jet")
+      gca().invert_yaxis()
+      colorbar()
       savefig("test_figures/x-$(iter).png")
     end
+    global iter += 1
 end
 
 losses = Float64[]

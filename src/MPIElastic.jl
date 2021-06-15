@@ -370,7 +370,8 @@ function compute_PML_Params!(param::MPIElasticPropagatorParams)
 end
 
 function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIElasticSource, 
-    ρ::Union{PyObject, Array{Float64, 2}}, λ::Union{PyObject, Array{Float64, 2}}, μ::Union{PyObject, Array{Float64, 2}})
+    ρ::Union{PyObject, Array{Float64, 2}}, λ::Union{PyObject, Array{Float64, 2}}, μ::Union{PyObject, Array{Float64, 2}};
+    tag_offset::Int64 = 0, dep = nothing)
     ρ = reshape(convert_to_tensor(ρ),(-1,))
     λ = reshape(convert_to_tensor(λ),(-1,))
     μ = reshape(convert_to_tensor(μ),(-1,))
@@ -401,6 +402,10 @@ function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIE
         i<=NSTEP+1
     end
     
+    if isnothing(dep)
+        dep = 0.0
+    end
+
     function body(i, vx_arr, vy_arr, sigmaxx_arr, sigmayy_arr, sigmaxy_arr, mem_arr...)
         mem = Array{PyObject}(undef, 8)
         σxx,σyy,σxy,vx,vy = 
@@ -408,10 +413,10 @@ function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIE
             read(vx_arr, i-1), read(vy_arr, i-1)
         for k = 1:8
             m = read(mem_arr[k], i-1)
-            mem[k] = _reshape_and_halo_exchange(m, param, 18*i+k-1, k>1 ? mem[k-1][1] : λ[1] + ρ[1] + μ[1] + vy[1] + σxy[1])
+            mem[k] = _reshape_and_halo_exchange(m, param, 18*i+k-1+tag_offset, k>1 ? mem[k-1][1] + dep : λ[1] + ρ[1] + μ[1] + vy[1] + σxy[1] + dep)
         end
 
-        mpi_idx = 18*i+8
+        mpi_idx = 18*i+8+tag_offset
         
         halo = (op, deps)->begin 
             op = _reshape_and_halo_exchange(op, param, mpi_idx, deps)

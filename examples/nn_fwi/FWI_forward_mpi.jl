@@ -11,16 +11,6 @@ close("all")
 
 ADCME.options.customop.verbose = false
 
-py"""
-import tensorflow as tf
-config_proto = tf.ConfigProto(intra_op_parallelism_threads=0,
-                              inter_op_parallelism_threads=0)
-# from tensorflow.core.protobuf import rewriter_config_pb2
-# off = rewriter_config_pb2.RewriterConfig.OFF
-# config_proto.graph_options.rewrite_options.memory_optimization  = off
-"""
-config_proto = py"config_proto"
-@show config_proto
 
 #################################################################
 output_dir = "data/elastic"
@@ -60,21 +50,21 @@ receiver = load_elastic_receiver(model_name, use_mpi=true, param=param)
 
 Rs_ = []
 # for i = 1:length(src)
-for i = 4:4
+for i = 1:4
   src_ = src[i]
   receiver_ = receiver[i]
 
-  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ)
+  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ; dep = length(Rs_)==0 ? nothing : sum(Rs_[end]))
   MPISimulatedObservation!(propagator, receiver_)
   
-  if (i < length(src)) && !ismissing(src[i+1].srcv) 
-    src[i+1].srcv += sum(propagator.vx[end,:]) * 1e-20
-  end
+  # if (i < length(src)) && !ismissing(src[i+1].srcv) 
+  #   src[i+1].srcv += sum(propagator.vx[end,:]) * 1e-20
+  # end
 
   push!(Rs_, receiver_.rcvv)
 end
 
-sess = Session(config=config_proto); init(sess)
+sess = Session(); init(sess)
 
 @info "starting..."
 

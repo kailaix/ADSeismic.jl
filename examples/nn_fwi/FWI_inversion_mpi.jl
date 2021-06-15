@@ -72,15 +72,14 @@ src = load_elastic_source(model_name, use_mpi=true, param=param)
 receiver = load_elastic_receiver(model_name, use_mpi=true, param=param)
 
 rcvv = Rs[1]
-for i = 4:4
+for i = 1:4
 
   src_ = src[i]
   receiver_ = receiver[i]
 
-  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ)
+  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ; dep = length(Rs_)==0 ? nothing : sum(Rs_[end]))
   MPISimulatedObservation!(propagator, receiver_)
 
-  local_loss = sum(propagator.vx[end,:]) * 1e-20
   if !isnothing(rcvv)
       global local_loss += sum((receiver_.rcvv - rcvv )^2) 
   end

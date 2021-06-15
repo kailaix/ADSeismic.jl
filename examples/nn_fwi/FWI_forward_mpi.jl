@@ -49,12 +49,14 @@ src = load_elastic_source(model_name, use_mpi=true, param=param)
 receiver = load_elastic_receiver(model_name, use_mpi=true, param=param)
 
 Rs_ = []
+Vs_ = []
+
 # for i = 1:length(src)
-for i = 1:4
+for i = 4:4
   src_ = src[i]
   receiver_ = receiver[i]
 
-  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ; dep = length(Rs_)==0 ? nothing : sum(Rs_[end]))
+  propagator = MPIElasticPropagatorSolver(param, src_, ρ, λ, μ; tag_offset = i*100000, dep = length(Vs_)==0 ? nothing : sum(Vs_[end]))
   MPISimulatedObservation!(propagator, receiver_)
   
   # if (i < length(src)) && !ismissing(src[i+1].srcv) 
@@ -62,6 +64,7 @@ for i = 1:4
   # end
 
   push!(Rs_, receiver_.rcvv)
+  push!(Vs_, propagator.vx)
 end
 
 sess = Session(); init(sess)

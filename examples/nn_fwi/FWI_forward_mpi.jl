@@ -33,9 +33,9 @@ vp = matread(model_name)["vp"]
 vs = matread(model_name)["vs"]
 rho = matread(model_name)["rho"]
 
-vp = extract_local_patch(param, vp)
-vs = extract_local_patch(param, vs)
-rho = extract_local_patch(param, rho)
+vp = extract_local_patch(param, vp, tag = 0)
+vs = extract_local_patch(param, vs, deps = sum(vp), tag = 810000)
+rho = extract_local_patch(param, rho, deps = sum(vs), tag = 820000)
 
 λ, μ, ρ = compute_lame_parameters(vp, vs, rho)
 
@@ -51,8 +51,9 @@ receiver = load_elastic_receiver(model_name, use_mpi=true, param=param)
 Rs_ = []
 Vs_ = []
 
+@info param.NSTEP, param.n
 # for i = 1:length(src)
-for i = 4:4
+for i = 1:4
   src_ = src[i]
   receiver_ = receiver[i]
 
@@ -64,10 +65,11 @@ for i = 4:4
   # end
 
   push!(Rs_, receiver_.rcvv)
-  push!(Vs_, propagator.vx)
+  push!(Vs_, propagator.vy)
 end
-
-sess = Session(); init(sess)
+session_conf = tf.ConfigProto(
+      inter_op_parallelism_threads=1)
+sess = Session(config = session_conf); init(sess)
 
 @info "starting..."
 

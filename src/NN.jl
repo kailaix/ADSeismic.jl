@@ -37,14 +37,14 @@ export Generator, sampleUQ
 #   return o
 # end
 
-function Generator(z, isTrain=true; num_layer=5, base=4, ratio=1, vmin=nothing, vmax=nothing)
+function Generator(z, isTrain=true; num_layer=5, h0=4, w0=8, vmin=nothing, vmax=nothing)
   local o
   # activation = tf.keras.activations.relu
   # activation = tf.keras.activations.tanh
   activation = tf.keras.layers.LeakyReLU(alpha=0.1)
   variable_scope("generator") do
-    x = tf.keras.layers.Dense(units = ceil(Int, base * ratio) * base * 8, use_bias=false)(z)
-    x = tf.reshape(x, shape=[-1, ceil(Int, base * ratio), base, 8])
+    x = tf.keras.layers.Dense(units = h0 * w0 * 8, use_bias=false)(z)
+    x = tf.reshape(x, shape=[-1, w0, h0, 8])
     x = activation(x)
 
     # x = tf.keras.layers.Conv2DTranspose(64, (5,5), strides=(2, 2), padding="same", use_bias=false)(x)

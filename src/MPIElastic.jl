@@ -153,9 +153,9 @@ function get_mpi_id2(a, b, n)
     idx
 end
 
-function extract_local_patch(param::MPIElasticPropagatorParams, v::Union{PyObject, Array{Float64,2}})
+function extract_local_patch(param::MPIElasticPropagatorParams, v::Union{PyObject, Array{Float64,2}}; deps = missing, tag = 0)
     v = v[(param.II - 1) * param.n + 1:param.II * param.n, (param.JJ - 1) * param.n + 1:param.JJ * param.n]
-    v = mpi_halo_exchange2(v, param.M, param.N)
+    v = mpi_halo_exchange2(v, param.M, param.N, deps = deps, tag = tag)
 end
 
 function compute_PML_Params!(param::MPIElasticPropagatorParams)
@@ -418,16 +418,16 @@ function MPIElasticPropagatorSolver(param::MPIElasticPropagatorParams, src::MPIE
 
         mpi_idx = 18*i+8+tag_offset
         
-        halo = (op, deps)->begin 
+        halo = (op, deps, mpi_idx)->begin 
             op = _reshape_and_halo_exchange(op, param, mpi_idx, deps)
             mpi_idx = mpi_idx + 1
-            op
+            op, mpi_idx
         end
-        vx = halo(vx, mem[8][1])
-        vy = halo(vy, vx[1])
-        σxx = halo(σxx, vy[1])
-        σyy = halo(σyy, σxx[1])
-        σxy = halo(σxy, σyy[1])
+        vx, mpi_idx = halo(vx, mem[8][1], mpi_idx)
+        vy, mpi_idx = halo(vy, vx[1], mpi_idx)
+        σxx, mpi_idx = halo(σxx, vy[1], mpi_idx)
+        σyy, mpi_idx = halo(σyy, σxx[1], mpi_idx)
+        σxy, mpi_idx = halo(σxy, σyy[1], mpi_idx)
 
         srci,srcj,srctype,srcv = ElasticSourceAtTimeT(src, i-1) 
         σxx, σyy, σxy,vx, vy, mem, mpi_idx = one_step(param, ρ, λ, μ, vx, vy, σxx, σyy, σxy,mem,

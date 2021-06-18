@@ -159,10 +159,10 @@ function Generator(z, isTrain, dropout_rate; num_layer=5, h0=4, w0=8, vmin=nothi
   return o
 end
 
-function sampleUQ(batch_size, sample_size, rcv_size; z_size=8, base=4, ratio=1, vmin=nothing, vmax=nothing)
+function sampleUQ(batch_size, sample_size, rcv_size; z_size=8, h0=4, w0=8, vmin=nothing, vmax=nothing)
   isTrain = placeholder(Bool)
   y = placeholder(Float64, shape=(sample_size, rcv_size...))
   z = placeholder(Float32, shape=(batch_size, z_size))
-  G_z = cast(Float64, Generator(z, isTrain, base=base, ratio=ratio, vmin=vmin, vmax=vmax))
+  G_z = cast(Float64, Generator(z, isTrain, h0=base, w0=ratio, vmin=vmin, vmax=vmax))
   return G_z, isTrain, y, z
 end

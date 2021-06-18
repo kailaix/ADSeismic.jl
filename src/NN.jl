@@ -78,7 +78,7 @@ function Generator(z, isTrain=true; num_layer=5, h0=4, w0=8, vmin=nothing, vmax=
     end
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-    x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same", use_bias=true)(x)
+    x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
 
     # x = tf.keras.layers.Conv2D(1, [1, 1], strides=(1, 1), padding="same")(x)
 
@@ -142,7 +142,7 @@ function Generator(z, isTrain, dropout_rate; num_layer=5, h0=4, w0=8, vmin=nothi
     end
 
     x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-    x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same", use_bias=true)(x)
+    x = tf.keras.layers.Conv2D(1, [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
 
     # x = tf.keras.layers.Conv2D(1, [1, 1], strides=(1, 1), padding="same")(x)
 

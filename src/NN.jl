@@ -40,8 +40,8 @@ export Generator, sampleUQ
 function Generator(z, isTrain=true; num_layer=5, h0=4, w0=8, vmin=nothing, vmax=nothing)
   local o
   # activation = tf.keras.activations.relu
-  # activation = tf.keras.activations.tanh
-  activation = tf.keras.layers.LeakyReLU(alpha=0.1)
+  activation = tf.keras.activations.tanh
+  # activation = tf.keras.layers.LeakyReLU(alpha=0.1)
   variable_scope("generator") do
     x = tf.keras.layers.Dense(units = h0 * w0 * 8, use_bias=false)(z)
     x = tf.reshape(x, shape=[-1, w0, h0, 8])
@@ -102,8 +102,8 @@ end
 function Generator(z, isTrain, dropout_rate; num_layer=5, base=4, ratio=1, vmin=nothing, vmax=nothing)
   local o
   # activation = tf.keras.activations.relu
-  # activation = tf.keras.activations.tanh
-  activation = tf.keras.layers.LeakyReLU(alpha=0.1)
+  activation = tf.keras.activations.tanh
+  # activation = tf.keras.layers.LeakyReLU(alpha=0.1)
   variable_scope("generator") do
     x = tf.keras.layers.Dense(units = Int(round(base * ratio)) * base * 1)(z)
     x = tf.reshape(x, shape=[-1, Int(round(base * ratio)), base, 1])

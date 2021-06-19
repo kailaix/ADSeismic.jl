@@ -138,7 +138,7 @@ function Generator(z, isTrain, dropout_rate; num_layer=5, h0=4, w0=8, vmin=nothi
 
     for i = 1:num_layer
       x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(2^(num_layer-i+3), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
+      x = tf.keras.layers.Conv2D(2^(num_layer-i+4), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
       x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
       x = activation(x)
     end

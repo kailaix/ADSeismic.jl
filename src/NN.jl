@@ -74,7 +74,7 @@ function Generator(z, isTrain=true; num_layer=5, h0=4, w0=8, vmin=nothing, vmax=
 
     for i = 1:num_layer
       x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(2^(num_layer-i+3), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
+      x = tf.keras.layers.Conv2D(2^(num_layer-i+2), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
       x = activation(x)
     end
 

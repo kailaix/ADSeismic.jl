@@ -138,13 +138,13 @@ end
 time = 0
 for iter = 0:max_iter
   # global time += @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed])
-  if iter < 500
-    lr = iter/500 * 1e-3
-  else
-    # lr = (max_iter - iter)/(max_iter - 500) * 1e-3
-    lr = 1e-3
-  end
-  # lr = 1e-3
+  # if iter < 500
+  #   lr = iter/500 * 1e-3
+  # else
+  #   # lr = (max_iter - iter)/(max_iter - 500) * 1e-3
+  #   lr = 1e-3
+  # end
+  lr = 1e-3
   t = @elapsed  _, ls = run(sess, [opt, loss], feed_dict=Dict(lr_decayed=>lr))
   callback(nothing, iter, ls)
   println("   $iter\t$ls\t$lr\t$t")

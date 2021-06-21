@@ -96,7 +96,7 @@ Optimize!(sess, loss, 5000, vars=[vp_], grads=grad,  callback=callback)
 
 ## Adam
 # global_step = tf.Variable(0, trainable=false)
-# max_iter = 50000
+# max_iter = 5000
 # lr_decayed = tf.train.cosine_decay(1.0, global_step, max_iter)
 # opt = AdamOptimizer(lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
 

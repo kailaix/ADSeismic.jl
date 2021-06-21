@@ -41,7 +41,7 @@ function Generator(z, isTrain=true; num_layer=5, h0=4, w0=8, vmin=nothing, vmax=
   local o
   # activation = tf.keras.activations.relu
   # activation = tf.keras.activations.tanh
-  activation = tf.keras.layers.LeakyReLU(alpha=0.2)
+  activation = tf.keras.layers.LeakyReLU(alpha=0.1)
   variable_scope("generator") do
     x = tf.keras.layers.Dense(units = h0 * w0 * 8, use_bias=false)(z)
     x = tf.reshape(x, shape=[-1, w0, h0, 8])
@@ -74,7 +74,7 @@ function Generator(z, isTrain=true; num_layer=5, h0=4, w0=8, vmin=nothing, vmax=
 
     for i = 1:num_layer
       x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(2^(num_layer-i+3), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
+      x = tf.keras.layers.Conv2D(min(2^(i+3), 2^(num_layer-i+4)), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
       x = activation(x)
     end
 
@@ -104,10 +104,10 @@ function Generator(z, isTrain, dropout_rate; num_layer=5, h0=4, w0=8, vmin=nothi
   local o
   # activation = tf.keras.activations.relu
   # activation = tf.keras.activations.tanh
-  activation = tf.keras.layers.LeakyReLU(alpha=0.2)
+  activation = tf.keras.layers.LeakyReLU(alpha=0.1)
   variable_scope("generator") do
     x = tf.keras.layers.Dense(units = h0 * w0 * 8, use_bias=false)(z)
-    x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
+    # x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
     x = tf.reshape(x, shape=[-1, w0, h0, 8])
     x = tf.keras.activations.tanh(x)
     # x = activation(x)
@@ -139,7 +139,7 @@ function Generator(z, isTrain, dropout_rate; num_layer=5, h0=4, w0=8, vmin=nothi
 
     for i = 1:num_layer
       x = tf.keras.layers.UpSampling2D((2, 2), interpolation="bilinear")(x)
-      x = tf.keras.layers.Conv2D(2^(num_layer-i+3), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
+      x = tf.keras.layers.Conv2D(min(2^(i+3), 2^(num_layer-i+4)), [4, 4], strides=(1, 1), padding="same", use_bias=false)(x)
       x = tf.keras.layers.Dropout(dropout_rate)(x, isTrain)
       x = activation(x)
     end

@@ -1,5 +1,5 @@
 # ENV["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
-using Revise
+# using Revise
 using ADSeismic
 using ADCME
 using MAT
@@ -14,29 +14,29 @@ close("all")
 gpu = has_gpu() ? true : false
 
 data_dir = "data/acoustic"
-method = "NNFWI"
+method = "NNFWI/marmousi"
 
-figure_dir = string("figure/",method,"/marmousi/")
-result_dir = string("result/",method,"/marmousi/")
-model_dir = string("NN_model/",method,"/marmousi/")
+figure_dir = string("figure/",method)
+result_dir = string("result/",method)
+model_dir = string("nn_model/",method)
 loss_file = joinpath(result_dir, "loss_$(Dates.now()).txt")
 
-check_path(dir) = !ispath(data_dir) ? mkpath(dir) : nothing
+check_path(dir) = !ispath(dir) ? mkpath(dir) : nothing
 check_path(figure_dir)
 check_path(result_dir)
 check_path(model_dir)
 
 ################### Inversion using Automatic Differentiation #####################
 reset_default_graph()
-model_name = "models/marmousi2-model-smooth-large.mat"
+model_name = "models/marmousi2-model-smooth.mat"
+# model_name = "models/marmousi2-model-smooth-large.mat"
 # model_name = "models/BP-model-smooth.mat"
 
 ## load model setting
-params = load_params(model_name, vp_ref=3e3, PropagatorKernel=1)
+params = load_params(model_name, vp_ref=1e3)
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
 vp0 = matread(model_name)["vp"]
-mask = matread(model_name)["mask"]
 
 ## original fwi
 # vp = Variable(vp0)
@@ -57,13 +57,19 @@ mask = matread(model_name)["mask"]
 # vp = vp0 + c
 
 ## fwi with cnn
-Random.seed!(123);
+Random.seed!(123)
+# tf.set_random_seed(123)
 z = constant(rand(Float32, 1, 8))
-x = Generator(z, ratio=size(vp0)[1]/size(vp0)[2], base=8)
-x = tf.cast(x, tf.float64)
-x = x * 1500
-vp = add_initial_model(x, constant(vp0))
-vp = mask .* vp + (1.0.-mask) .* vp0
+# x = Generator(z, ratio=size(vp0)[1]/size(vp0)[2], base=8)
+num_layer = 4
+Δvp = Generator(z, w0=ceil(Int, size(vp0)[1]/(2^num_layer)), h0=ceil(Int, size(vp0)[2]/(2^num_layer)), num_layer=num_layer, vmin=-1.5, vmax=1.5)
+Δvp = tf.cast(Δvp, tf.float64)*1000.0
+# Δvp = Variable(zeros(size(vp0)))
+vp = add_initial_model(Δvp, constant(vp0))
+if exists(matopen(model_name), "mask")
+  mask = matread(model_name)["mask"] 
+  vp = mask .* vp + (1.0.-mask) .* vp0
+end
 
 ## assemble acoustic propagator model
 model = x->AcousticPropagatorSolver(params, x, vp)
@@ -87,15 +93,16 @@ if gpu
 else
   [SimulatedObservation!(model(src[i]), rcv[i]) for i = 1:length(src)]
   loss = sum([sum((rcv[i].rcvv-Rs[i])^2) for i = 1:length(rcv)])
-  grad = gradients(loss)
+  grad = gradients(loss, vars)
 end
 
-## optimization
-global_step = tf.Variable(0, trainable=false)
-max_iter = 50000
+## optimization using Adam
+# global_step = tf.Variable(0, trainable=false)
+max_iter = 10000
 # lr_decayed = tf.train.cosine_decay(0.001, global_step, max_iter)
 lr_decayed = placeholder(0.0)
-opt = AdamOptimizer(learning_rate=lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
+# opt = AdamOptimizer(learning_rate=lr_decayed).minimize(loss, global_step=global_step, colocate_gradients_with_ops=true)
+opt = AdamOptimizer(learning_rate=lr_decayed).minimize(loss, colocate_gradients_with_ops=true)
 
 ## run inversion
 sess = Session(); init(sess)
@@ -104,11 +111,13 @@ loss0 = run(sess, loss)
 
 fp = open(loss_file, "w")
 write(fp, "0,$loss0\n")
-function callback(vs, iter, loss)
-  if iter%50==1
+iter0 = 0
+function callback(_, iter, loss)
+  iter += iter0
+  if iter%10==0
     x = run(sess, vp)'
     clf()
-    pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  x)
+    pcolormesh([0:params.NX+1;]*params.DELTAX/1e3,[0:params.NY+1;]*params.DELTAY/1e3,  x, shading="auto", cmap="jet")
     axis("scaled")
     colorbar(shrink=0.4)
     xlabel("x (km)")
@@ -118,7 +127,7 @@ function callback(vs, iter, loss)
     savefig(joinpath(figure_dir, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
     writedlm(joinpath(result_dir, "inv_$(lpad(iter,5,"0")).txt"), x)
   end
-  if iter%1000 == 1
+  if iter%100 == 0
     ADCME.save(sess, joinpath(model_dir, "NNFWI_$(lpad(iter,5,"0")).mat"))
   end
   write(fp, "$iter,$loss\n")
@@ -127,20 +136,23 @@ end
 
 ## optimization using Adam
 time = 0
-for iter = 1:max_iter
+for iter = 0:max_iter
   # global time += @elapsed  _, ls, lr = run(sess, [opt, loss, lr_decayed])
-  if iter < 10000
-    lr = iter/10000 * 1e-3
+  if iter < 500
+    lr = iter/500 * 1e-3
   else
-    lr = (max_iter - iter)/(max_iter - 10000) * 1e-3
+    # lr = (max_iter - iter)/(max_iter - 500) * 1e-3
+    lr = 1e-3
   end
+  # lr = 1e-3
   t = @elapsed  _, ls = run(sess, [opt, loss], feed_dict=Dict(lr_decayed=>lr))
   callback(nothing, iter, ls)
-  println("$iter\t$ls\t$t")
+  println("   $iter\t$ls\t$lr\t$t")
 end
 
 ## optimization using BFGS
-Optimize!(sess, loss, vars=vars, grads=grad, callback=callback)
+iter0 = max_iter+1
+Optimize!(sess, loss, 1000, vars=vars, grads=grad, callback=callback)
 
 close(fp)
 

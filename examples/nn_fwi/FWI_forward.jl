@@ -11,17 +11,18 @@ close("all")
 gpu = has_gpu() ? true : false
 
 output_dir = "data/acoustic"
-if !ispath(output_dir)
-  mkpath(output_dir)
-end
+
+check_path(dir) = !ispath(dir) ? mkpath(dir) : nothing
+check_path(output_dir)
 
 ################### Generate synthetic data #####################
 reset_default_graph()
-model_name = "models/marmousi2-model-true-large.mat"
+model_name = "models/marmousi2-model-true.mat"
+# model_name = "models/marmousi2-model-true-large.mat"
 # model_name = "models/BP-model-true.mat"
 
 ## load model setting
-params = load_params(model_name, vp_ref=3e3, PropagatorKernel=1)
+params = load_params(model_name, vp_ref=1e3)
 src = load_acoustic_source(model_name)
 rcv = load_acoustic_receiver(model_name)
 vp = constant(matread(model_name)["vp"])

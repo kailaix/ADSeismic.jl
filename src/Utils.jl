@@ -298,14 +298,17 @@ Computes the loss and the gradients of the model on all available GPUs.
 - `vs`: Variables to be optimized. It or its elements must have `ref` type.
 """
 function compute_loss_and_grads_GPU(model::Function, src::Union{Array{AcousticSource},Array{ElasticSource}},
-         rcv_sim::Union{Array{AcousticReceiver}, Array{ElasticReceiver}}, Rs::Array{Array{Float64,2},1}, vs::Union{PyObject, Array{PyObject}}; reg::Float64=0.0)
+         rcv_sim::Union{Array{AcousticReceiver}, Array{ElasticReceiver}}, Rs::Array{Array{Float64,2},1}, vs::Union{PyObject, Array{PyObject}}; aux_loss::Union{PyObject, Missing}=missing)
 
     flag = isa(vs, PyObject)
     function run_on_gpu_device(gpu_id, jobs)
         local loss, g
         @pywith tf.device("/gpu:$(gpu_id)") begin
             [SimulatedObservation!(model(src[i]), rcv_sim[i]) for i = jobs]
-            loss = sum([sum((rcv_sim[i].rcvv-Rs[i])^2) for i = jobs]) + reg * tf.cast(sum(sum.(vs.^2)), tf.float64)
+            loss = sum([sum((rcv_sim[i].rcvv-Rs[i])^2) for i = jobs]) #+reg * tf.cast(sum(sum.(vs.^2)), tf.float64)
+            if !ismissing(aux_loss)
+                loss += aux_loss
+            end
             g = gradients(loss, vs)
         end
         return loss, g

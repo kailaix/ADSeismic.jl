@@ -52,16 +52,15 @@ Z = Z[2:end-1]
 
 idx_rcv = [pml + Int(round(0.0/Δx))+2, pml + Int(round(1.0/Δx))+1]
 
-
 ## Anomaly
 model = "step"
 cH = ones(length(xH)) * 3.0
 cH_init = copy(cH)
 cH[pml + Int(round(0.6/Δx)):end] .= 1.0
-model = "slop"
-cH = ones(length(xH)) * 2.0
-cH_init = copy(cH)
-cH[pml + Int(round(0.3/Δx)):end] = range(2.0, 3.0, length=length(cH[pml + Int(round(0.3/Δx)):end]))
+# model = "slop"
+# cH = ones(length(xH)) * 2.0
+# cH_init = copy(cH)
+# cH[pml + Int(round(0.3/Δx)):end] = range(2.0, 3.0, length=length(cH[pml + Int(round(0.3/Δx)):end]))
 
 
 cH_true = copy(cH)

@@ -165,7 +165,9 @@ function compute_PML_Params!(param::MPIElasticPropagatorParams)
     param.M = div(NX,n)
     param.N = div(NY,n)
     param.II, param.JJ = div(r, param.N)+1, mod(r, param.N)+1
-    @assert mpi_size() == param.M * param.N
+    if mpi_size() != param.M * param.N
+        error("MPI Size Mismatch: mpi_size = $(mpi_size()), M = $(param.M), N = $(param.N)")
+    end
     @assert NX>0 && NY>0
     @assert mod(NX, n)==0 && mod(NY, n)==0
 

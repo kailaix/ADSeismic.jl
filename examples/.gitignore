@@ -1,3 +1,4 @@
 *.ipynb_checkpoints
 toDelete
 mpi_elastic/data
+stdout/

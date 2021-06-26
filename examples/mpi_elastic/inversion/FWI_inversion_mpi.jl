@@ -1,6 +1,7 @@
 using Revise
 using ADSeismic
 using ADCME
+using Optim
 using PyPlot
 using MAT
 using DelimitedFiles
@@ -48,29 +49,20 @@ rho0 = matread("models/marmousi2-model-true.mat")["rho"]
 @load joinpath(data_dir, "data$(mpi_rank())-$(mpi_size()).jld2") Rs
 
 vp_ = Variable(vp0)
-# vs_ = Variable(vs0)
-ps_ratio_ = Variable(1.75)
-# vs_ = vp0 / ps_ratio_
-# rho_ = Variable(rho0)
 var_size = size(vp_)
+ps_ratio_ = Variable(1.75)
+vp = mpi_bcast(vp_)
+ps_ratio = mpi_bcast(ps_ratio_, deps=sum(vp))
+
 if exists(matopen(model_name), "mask")
     @info "using mask..."
     mask = matread(model_name)["mask"] 
-    vp0 = mask .* vp_ + (1.0.-mask) .* vp0
-    # vs0 = mask .* vs_ + (1.0.-mask) .* vs0
-    # rho0 = mask .* rho_ + (1.0.-mask) .* rho0
-else
-    vp0 = vp_
-    vs0 = vs_
+    vp = mask .* vp + (1.0.-mask) .* vp0
 end
 
-vp = mpi_bcast(vp0)
-ps_ratio = mpi_bcast(ps_ratio_, deps=sum(vp))
-# vs = vs0
 ps_ratio = tanh(ps_ratio - 1.75)*0.5 + 1.75
-vs = vp / ps_ratio
-# vs = mpi_bcast(vs0, deps=sum(vp))
-# vs = constant(vs0)
+# vs = vp / ps_ratio
+vs = constant(vs0)
 rho = constant(rho0)
 
 vp = extract_local_patch(param, vp, tag = 0)
@@ -86,7 +78,8 @@ Rs_ = []
 Vs_ = []
 
 local_loss = constant(0.0)
-for i = 1:length(src)
+# for i = 1:length(src)
+for i = 4:4
   
   rcvv = Rs[i]
   src_ = src[i]
@@ -107,14 +100,8 @@ end
 local_loss += sum(Vs_[end]) * 1e-20
 
 loss = mpi_sum(local_loss) * 1e7
-# g = gradients(loss, [vp_, vs_])
-g = gradients(loss, [vp_, ps_ratio_])
-@info g
-g1 = reshape(g[1], [prod(var_size)])
-g2 = reshape(g[2], [1])
-g = concat([g1,g2], dims=1)
-# g = tf.concat(g, axis=1)
-# g = concat(g, dims=2)
+# g = gradients(loss, [vp_, ps_ratio_])
+g = gradients(loss, vp_)
 
 py"""
 from tensorflow.core.protobuf import rewriter_config_pb2
@@ -137,29 +124,31 @@ sess = Session(config = session_conf); init(sess)
 @info "initial local loss = $(run(sess, local_loss)) at rank = $(mpi_rank())"
 
 function calculate_loss(x)
-    # x = reshape(x, var_size)
     p = reshape(x[1:prod(var_size)], var_size)
-    # s = reshape(x[prod(var_size)+1:2*prod(var_size)], var_size)
-    ps =  x[prod(var_size)+1]
-    # r = reshape(x[2*prod(var_size)+1:3*prod(var_size)], var_size)
-    # L = run(sess, loss, vp_=>p, vs_=>s)#, rho_=>r)
-    L = run(sess, loss, vp_=>p, ps_ratio_=>ps)
-    # L = run(sess, loss, vp_=>p)
-    L
+    L = run(sess, loss, vp_=>p)
+
+    # ps =  x[prod(var_size)+1]
+    # L = run(sess, loss, vp_=>p, ps_ratio_=>ps)
+    return L
 end
 
 iter = 0
 iter_result = Array{Float64, 2}[]
 function calculate_gradients(G, x)
-    # x = reshape(x, var_size)
     p = reshape(x[1:prod(var_size)], var_size)
-    # s = reshape(x[prod(var_size)+1:2*prod(var_size)], var_size)
-    ps =  x[prod(var_size)+1]
-    s = p ./ ps
-    # r = reshape(x[2*prod(var_size)+1:3*prod(var_size)], var_size)
-    # G[:] = run(sess, g, vp_=>p, vs_=>s)#, rho_=>r)
-    G[:] = run(sess, g, vp_=>p, ps_ratio_=>ps)
-    # L = run(sess, loss, vp_=>p)
+
+    G[:] = run(sess, g, vp_=>p)
+
+    # ps =  x[prod(var_size)+1]
+    # ps = tanh(ps - 1.75)*0.5 + 1.75
+    # s = p ./ ps
+    # if mpi_rank() == 0
+    #   @info ps, maximum(p), maximum(s)
+    # end
+    # G_tmp = run(sess, g, vp_=>p, ps_ratio_=>ps)
+    # G[:] = append!(reshape(G_tmp[1], prod(var_size)), G_tmp[2])
+    
+
     if mpi_rank() == 0
       @info "iter = ", iter
       if iter % 1 == 0
@@ -174,20 +163,22 @@ function calculate_gradients(G, x)
           title("Iteration = $iter")
         #   savefig(joinpath(figure_dir, "inv_p_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
         #   clf()
-          subplot(212)
-          pcolormesh(s', shading="auto", cmap="jet")
-          axis("scaled")
-          colorbar()
-          xlabel("x (km)")
-          ylabel("z (km)")
-          gca().invert_yaxis()
+
+          # subplot(212)
+          # pcolormesh(s', shading="auto", cmap="jet")
+          # axis("scaled")
+          # colorbar()
+          # xlabel("x (km)")
+          # ylabel("z (km)")
+          # gca().invert_yaxis()
+
         #   subplot(312)
         #   pcolormesh(r', cmap="jet")
         #   gca().invert_yaxis()
         #   colorbar()
           savefig(joinpath(figure_dir, "inv_$(lpad(iter,5,"0")).png"), bbox_inches="tight")
           writedlm(joinpath(result_dir, "inv_vp_$(lpad(iter,5,"0")).txt"), p)
-          writedlm(joinpath(result_dir, "inv_vs_$(lpad(iter,5,"0")).txt"), s)
+          # writedlm(joinpath(result_dir, "inv_vs_$(lpad(iter,5,"0")).txt"), s)
       end
       global iter += 1
     end
@@ -199,12 +190,13 @@ function step_callback(x)
     push!(losses, x)
 end
 
-# initial_x = run(sess, [vp_, vs_])#, rho_])
-initial_x = run(sess, [vp_, ps_ratio_])
-# initial_x = cat(initial_x..., dims=2)[:]
-initial_x = append!(reshape(initial_x[1], prod(var_size)), initial_x[2])
+# initial_x = run(sess, [vp_, ps_ratio_])
+# # initial_x = cat(initial_x..., dims=2)[:]
+# initial_x = append!(reshape(initial_x[1], prod(var_size)), initial_x[2])
+initial_x = run(sess, vp_)[:]
 options = Options()
-result = ADOPT.mpi_optimize(calculate_loss, calculate_gradients, initial_x, LBFGS(), options; step_callback = step_callback)
+# result = ADOPT.mpi_optimize(calculate_loss, calculate_gradients, initial_x, LBFGS(), options; step_callback = step_callback)
+result = ADCME.mpi_optimize(calculate_loss, calculate_gradients, initial_x)#, LBFGS(), options; step_callback = step_callback)
 
 if mpi_size()>1
     mpi_finalize()  

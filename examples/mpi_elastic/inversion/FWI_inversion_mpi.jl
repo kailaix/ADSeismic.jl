@@ -42,7 +42,7 @@ vs0 = matread(model_name)["vs"]
 # rho0 = matread(model_name)["rho"]
 ##
 # vp0 = matread("models/marmousi2-model-true.mat")["vp"]
-# vs0 = matread("models/marmousi2-model-true.mat")["vs"]
+vs0 = matread("models/marmousi2-model-true.mat")["vs"]
 rho0 = matread("models/marmousi2-model-true.mat")["rho"]
 
 @info "loading data..."
@@ -79,7 +79,7 @@ Vs_ = []
 
 local_loss = constant(0.0)
 # for i = 1:length(src)
-for i = 4:4
+for i in [3,6]
   
   rcvv = Rs[i]
   src_ = src[i]

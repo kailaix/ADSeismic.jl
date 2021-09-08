@@ -15,8 +15,11 @@ ADSeismic is built for general seismic inversion problems, such as estimating ve
 - **(Multi-)GPU support**: Support for GPU acceleration as well as multi-GPU (in theory TPUs are also supported).
 
 Examples can be found int these papers:
+
 [A General Approach to Seismic Inversion with Automatic Differentiation](https://arxiv.org/pdf/2003.06027.pdf) 
+
 [Integrating Deep Neural Networks with Full-waveform Inversion: Reparametrization, Regularization, and Uncertainty Quantification](https://arxiv.org/pdf/2012.11149.pdf)
+
 [Distributed Machine Learning for Computational Engineering using MPI](https://arxiv.org/pdf/2011.01349.pdf)
 
 ## Installation

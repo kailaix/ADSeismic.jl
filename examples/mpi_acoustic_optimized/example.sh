@@ -1,1 +1,0 @@
-mpirun -n 25 julia MPI_forward.jl

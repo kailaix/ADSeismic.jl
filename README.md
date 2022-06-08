@@ -22,6 +22,8 @@ Examples can be found int these papers:
 
 [Distributed Machine Learning for Computational Engineering using MPI](https://arxiv.org/pdf/2011.01349.pdf)
 
+[Learning generative neural networks with physics knowledge](https://link.springer.com/article/10.1007/s40687-022-00329-z)
+
 ## Installation
 
 ADSeismic.jl requires proper installation of [ADCME.jl](https://github.com/kailaix/ADCME.jl/).

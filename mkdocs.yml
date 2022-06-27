@@ -1,0 +1,12 @@
+site_name: "ADSeismic"
+site_description: 'ADSeismic: A High Performance Package for Automatic Differentiation (AD) based General Seismic Inversion'
+site_author: 'Weiqiang Zhu'
+docs_dir: docs/
+repo_name: 'kailaix/ADSeismic.jl'
+repo_url: 'https://github.com/kailaix/ADSeismic.jl'
+nav:
+    - Overview: README.md
+theme:
+  name: 'material'
+plugins:
+  - mkdocs-jupyter

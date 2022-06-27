@@ -1,0 +1,477 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="ADSeismic: A High Performance Package for Automatic Differentiation (AD) based General Seismic Inversion">
+      
+      
+        <meta name="author" content="Weiqiang Zhu">
+      
+      
+        <link rel="canonical" href="https://ai4earth.github.io/adseismic/src/backward_inversion/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
+    
+    
+      
+        <title>Inversioin using Automatic Differentiation - ADSeismic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.1d29e8d0.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        
+      
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#inversioin-using-automatic-differentiation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ADSeismic" class="md-header__button md-logo" aria-label="ADSeismic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ADSeismic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Inversioin using Automatic Differentiation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/kailaix/ADSeismic.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ADSeismic.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ADSeismic" class="md-nav__button md-logo" aria-label="ADSeismic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    ADSeismic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kailaix/ADSeismic.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ADSeismic.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#inverting-velocity-model" class="md-nav__link">
+    Inverting Velocity Model
+  </a>
+  
+    <nav class="md-nav" aria-label="Inverting Velocity Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#marmousi-model" class="md-nav__link">
+    Marmousi model
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#layer-model" class="md-nav__link">
+    Layer model
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inverting-source-location-and-time-function" class="md-nav__link">
+    Inverting Source Location and Time Function
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inverting-rupture-process" class="md-nav__link">
+    Inverting Rupture Process
+  </a>
+  
+    <nav class="md-nav" aria-label="Inverting Rupture Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-invert-the-rupture-process-directly" class="md-nav__link">
+    1. Invert the rupture process directly
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-inverte-the-slip-time-and-amplitude" class="md-nav__link">
+    2. Inverte the slip time and amplitude
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/kailaix/ADSeismic.jl/edit/master/docs/src/backward_inversion.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<h1 id="inversioin-using-automatic-differentiation">Inversioin using Automatic Differentiation</h1>
+<p>In this section, we describe three inversion problems in seismic imaging: inverting velocity, inverting source location and time function, and inverting rupture process. </p>
+<p>Despite the method described here is also applicable to elastic wave equation, we consider the simpler the acoustic wave equation
+$\begin{aligned} {u_{tt}} - {c^2}\Delta u =&amp; f \ u =&amp; {u_0} \ {u_t} =&amp; {v_0} \end{aligned}$</p>
+<p>Here $f$ is the source function, $u_0$ and $v_0$ are initial conditions. For numerical simulation, the perfect matched layer boundary condition is used to truncate the computational domain. See <a href="https://kailaix.github.io/ADSeismic.jl/dev/forward_simulation/#Acoustic-Wave-Simulation-1">Acoustic Wave Simulation</a> for details. </p>
+<h2 id="inverting-velocity-model">Inverting Velocity Model</h2>
+<p>In this model, $c(x, y)$ is unknown. Red dots represent $n$ sources and triangles represent $m$ receivers at locations ${\mathbf{x}_i}$. We activate the sources one by one and collect the time serious signals $u(t, \mathbf{x}_i)$ at the receivers for different source functions. Therefore, the observations are $m$ $\mathbb{R}^{n_t\times n}$ matrices, where $n_t$ is the size of the time series. This inversion problem is called <strong>full waveform inversion</strong>, or FWI for short. </p>
+<p>The idea of FWI is updating $c(x, y)$ until the observations and the estimations--which are obtained from solving the wave equation--match. We do benchmarks on two classical models for $c(x,y)$: Marmousi model and Layer model. </p>
+<h3 id="marmousi-model">Marmousi model</h3>
+<p><img alt="" src="../asset/forward_marmousi.gif" /></p>
+<table>
+<thead>
+<tr>
+<th>Ground Truth</th>
+<th>Inversion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/marmousi-model-vp.png" /></td>
+<td><img alt="" src="../asset/fwi_marmousi.png" /></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="" src="../asset/fwi_marmousi.gif" /></p>
+<h3 id="layer-model">Layer model</h3>
+<p><img alt="" src="../asset/forward_layermodel.gif" /></p>
+<table>
+<thead>
+<tr>
+<th>Ground Truth</th>
+<th>Inversion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/layer-model-vp.png" /></td>
+<td><img alt="" src="../asset/fwi_layermodel.png" /></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="" src="../asset/fwi_layermodel.gif" /></p>
+<p>To invert the acoustic wave velocity, we first create three containers for storing simulation results, source functions and receiver data</p>
+<pre><code class="language-julia">ap_sim = load_acoustic_model(&quot;models/layer-model-smooth.mat&quot;; inv_vp=true, IT_DISPLAY=0)
+src = load_acoustic_source(&quot;models/layer-model-smooth.mat&quot;)
+rcv_sim = load_acoustic_receiver(&quot;models/layer-model-smooth.mat&quot;)
+</code></pre>
+<p>Then we load ground truth receiver data</p>
+<pre><code class="language-julia">Rs = Array{Array{Float64,2}}(undef, length(src))
+for i = 1:length(src)
+    Rs[i] = readdlm(joinpath(output_dir, &quot;layermodel-r$i.txt&quot;))
+end
+</code></pre>
+<p>Since we want to run the model on multi-GPU, we instruct ADSeismic to compute the gradients and loss on GPUs and then assemble them on CPU</p>
+<pre><code class="language-julia">vp = get_collection()[1]
+losses, gs = compute_loss_and_grads_GPU(ap_sim, src, rcv_sim, Rs, vp) # losses and gs are computed on GPUs
+g = sum(gs); loss = sum(losses) # g and loss are assembled on CPU
+</code></pre>
+<p>Finally, the optimization can be triggered by <code>LBFGS!</code>, a built-in L-BFGS optimizer</p>
+<pre><code class="language-julia">sess = Session(); init(sess)
+LBFGS!(sess, loss, g, vp)
+</code></pre>
+<h2 id="inverting-source-location-and-time-function">Inverting Source Location and Time Function</h2>
+<p>In this case, the location and amplitude function of the source (we assume there is one single source) is not known. The receivers are placed on the earth surface. We want to estimate the source term $f$ based on the receiver information (which are $m$ time series in $\mathbb{R}^{n_t}$).</p>
+<p>Mathematically, $f(t, \mathbf{x})$ is a Delta function in $\mathbf{x}$; to make the inversion problem continuous, we use </p>
+<pre><code class="language-math">f_{\theta}(t, \mathbf{x}) = g(t) \frac{1}{2\pi\sigma^2}\exp(-\frac{\|\mathbf{x}-\theta\|^2}{2\sigma^2})
+</code></pre>
+<p>to approximate $f(t, \mathbf{x})$; here $\theta\in\mathbb{R}^2$ and $g(t)$ are unknown. </p>
+<table>
+<thead>
+<tr>
+<th>Source/Receiver Location</th>
+<th>Forward Simulation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/source-vp.png" /></td>
+<td><img alt="" src="../asset/forward_source.gif" /></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Source Time Function Inversion</th>
+<th>Source Location Inversion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/source-waveform.png" /></td>
+<td><img alt="" src="../asset/source-location.png" /></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="" src="../asset/fwi_source.gif" /></p>
+<h2 id="inverting-rupture-process">Inverting Rupture Process</h2>
+<h3 id="1-invert-the-rupture-process-directly">1. Invert the rupture process directly</h3>
+<table>
+<thead>
+<tr>
+<th>Source/Receiver Location</th>
+<th>Forward Simulation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/rupture-vp.png" /></td>
+<td><img alt="" src="../asset/forward_rupture.gif" /></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Ground Truth</th>
+<th>Inversion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/rupture-waveform.png" /></td>
+<td><img alt="" src="../asset/fwi_rupture.png" /></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="" src="../asset/fwi_rupture.gif" /></p>
+<h3 id="2-inverte-the-slip-time-and-amplitude">2. Inverte the slip time and amplitude</h3>
+<p>In this case, the functional form of the source function is known (see <a href="@ref"><code>Gauss</code></a>)</p>
+<pre><code class="language-math">f(t) = \frac{2A}{\pi^2 a^2} \exp\left( -\frac{(t-t_0)^2}{\pi^2 a^2} \right)
+</code></pre>
+<p>where $A$ is the amplitude, $a$ is the parameter that controls width of the Gaussian, and $t_0$ is the shift of the parameter. </p>
+<table>
+<thead>
+<tr>
+<th>Ground Truth</th>
+<th>Inversion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/rupture-waveform-time.png" /></td>
+<td><img alt="" src="../asset/fwi_rupture_time.png" /></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="" src="../asset/fwi_rupture_time.gif" /></p>
+
+              
+            </article>
+            
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.0238f547.min.js"></script>
+      
+    
+  </body>
+</html>

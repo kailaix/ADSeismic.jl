@@ -1,0 +1,403 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="ADSeismic: A High Performance Package for Automatic Differentiation (AD) based General Seismic Inversion">
+      
+      
+        <meta name="author" content="Weiqiang Zhu">
+      
+      
+        <link rel="canonical" href="https://ai4earth.github.io/adseismic/src/">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
+    
+    
+      
+        <title>Getting Started - ADSeismic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.1d29e8d0.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.cbb835fc.min.css">
+        
+      
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#getting-started" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ADSeismic" class="md-header__button md-logo" aria-label="ADSeismic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ADSeismic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting Started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/kailaix/ADSeismic.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ADSeismic.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ADSeismic" class="md-nav__button md-logo" aria-label="ADSeismic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    ADSeismic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kailaix/ADSeismic.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ADSeismic.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#simple-example-acoustic-wave-equation" class="md-nav__link">
+    Simple Example: Acoustic Wave Equation
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/kailaix/ADSeismic.jl/edit/master/docs/src/index.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<h1 id="getting-started">Getting Started</h1>
+<p><strong>An Open Source High Performance Package for General Seismic Inversion Problems</strong></p>
+<p><img alt="" src="assets/icon.png" /></p>
+<p>ADSeismic is suitable for general inversion problems in seismic imaging. The packages implements the forward simulation of acoustic and elastic wave fields and allows inversion of physical properties such as media densities, Lamé parameters, shear modulus, etc. by means of <strong>automatic differentiation</strong>. For example, the following problems fall into the scope of this framework</p>
+<ul>
+<li>Full waveform inversion (FWI)</li>
+<li>Rupture inversion</li>
+<li>Source-time inversion</li>
+</ul>
+<p>The package provides a unified interface for both acoustic and elastic wave simulation. Users only need to specify the geometries and known parameters of the physical simulation. Gradients (traditionally derived by adjoint methods) are computed automatically. Some notable features of this package are</p>
+<ul>
+<li><strong>Battery included</strong>: unified approach to various seismic inversion problems such as full waveform inversion (FWI), rupture inversion and source-time inversion.</li>
+<li><strong>High performance</strong>: computational graph optimization and parallel computing. </li>
+<li><strong>(Multi-)GPU support</strong>: support for GPU acceleration as well as multi-GPU (in theory TPUs are also supported).</li>
+<li><strong>Easy-to-use</strong>: no adjoint state method codes required for building your own inversion models; automatic differentiation is the workhorce.</li>
+</ul>
+<p>ADSeismic is built on <a href="https://github.com/kailaix/ADCME.jl/">ADCME.jl</a>, an automatic differentiation library for computational mathematics and engineering. The former is fully compatible with ADCME.jl, which indicates that this package (ADSeismic.jl) can serve as a acoustic/elastic simulation solver in a system inverse modeling problem. </p>
+<h2 id="installation">Installation</h2>
+<p><code>ADCME</code> is a dependency for using this package. Install <code>ADCME</code> with</p>
+<pre><code class="language-julia">using Pkg; Pkg.add(&quot;ADCME&quot;)
+</code></pre>
+<p>Then install the lastest ADSeismic.jl by</p>
+<pre><code class="language-julia">using Pkg; Pkg.add(&quot;https://github.com/kailaix/ADSeismic.jl#master&quot;)
+</code></pre>
+<p>or the stable version by </p>
+<pre><code class="language-julia">using Pkg; Pkg.add(&quot;ADSeismic&quot;)
+</code></pre>
+<p>If you want to use GPU for ADSeismic, you need to install the GPU-capable ADCME. See instructions [here](https://kailaix.github.io/ADCME.jl/latest/tu_customop/#Install-GPU-enabled-TensorFlow-(Linux-and-Windows).</p>
+<h2 id="simple-example-acoustic-wave-equation">Simple Example: Acoustic Wave Equation</h2>
+<p>We consider the acoustic wave equation </p>
+<p>$$\frac{\partial^2 u }{\partial t^2} = \nabla \cdot (c^2 \nabla u) + f$$</p>
+<p>where $u$ is the displacement, $f$ is the source term, and $c$ is the spatially varying acoustic velocity. In numerical simulations, we apply the perfect matched layer (PML) boundary conditions so that the outgoing waves are damped near the boundary. This enables us to emulate an infinite space using a finite computational domain. A description of the numerical scheme could be found in this paper. [^pml]</p>
+<p>[^pml]: Grote, Marcus J., and Imbo Sim. "Efficient PML for the wave equation." arXiv preprint arXiv:1001.0319 (2010).</p>
+<p>In the forward simulation, we consider a layer model as the ground truth for $c$, which consists of three layers with different values:
+<img alt="" src="asset/index/model.png" /></p>
+<p>We consider a delta source function $f(\mathbf{x}, t) = \delta(\mathbf{x}-\mathbf{x}_0)g(t)$, where $g(t)$ is a Ricker wavelet. </p>
+<p>Using this source function (left plot), we are able to generate the wavefield (right plot)</p>
+<table>
+<thead>
+<tr>
+<th>Source Function</th>
+<th>Wavefield</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="asset/index/ricker.png" /></td>
+<td><img alt="" src="asset/index/wavefield.gif" /></td>
+</tr>
+</tbody>
+</table>
+<p>The code for forward simulation is as follows:</p>
+<pre><code class="language-julia">using ADCME
+using ADSeismic
+using PyPlot
+using DelimitedFiles
+using JLD2 
+
+scale = 201
+
+param = AcousticPropagatorParams(NX=scale, NY=scale, 
+    NSTEP=1000, DELTAT=1e-4,  DELTAX=1.0, DELTAY=1.0,
+    PropagatorKernel = 0, Rcoef = 1e-8)
+
+rc = Ricker(param, 30.0, 200.0, 1e6)
+srci = [div(param.NX,2)]
+srcj = [div(param.NY,5)]
+srcv = reshape(rc, :, 1)
+src = AcousticSource(srci, srcj, srcv)
+
+layers = ones(param.NX+2, param.NY+2)
+n_piece = div(param.NX + 1, 3) + 1
+for k = 1:3
+    i_interval = (k-1)*n_piece+1:min(k*n_piece, param.NX+2)
+    layers[:, i_interval] .= 0.5 + (k-1)*0.25
+end
+
+C = placeholder(3300*layers)
+model = AcousticPropagatorSolver(param, src, C)
+
+sess = Session(); init(sess)
+u = run(sess, model.u)
+</code></pre>
+<p>In the inverse problem, we assume we can observe the wavefield $u(x, 40, t)$ for all $x$ and $t$. The unknown is the velocity model $c$. We can find the value of $c$ by solving the PDE-constrained optimization problem </p>
+<p>$$\begin{aligned} \min_c &amp;\; \sum_{} (u_h(x_i, 40, t_j) - u(x_i, 40, t_j))^2 \ \text{s.t.} &amp;\; F_h(u_h, c) = 0\end{aligned}$$</p>
+<p>Here $F_h(u_h, c)=0$ is the numerical discretization of the wave equation and $u_h$ is the numerical solution for <strong>all</strong> time steps. The following plot shows the signal we received:</p>
+<p><img alt="" src="asset/index/signal.png" /></p>
+<p>We can apply automatic differentiation with the following code to calculate the gradients of the loss function with respect to $c$</p>
+<pre><code class="language-julia">using ADCME
+using ADSeismic
+using PyPlot
+using DelimitedFiles
+using JLD2 
+
+scale = 201
+
+param = AcousticPropagatorParams(NX=scale, NY=scale, 
+    NSTEP=1000, DELTAT=1e-4,  DELTAX=1.0, DELTAY=1.0,
+    PropagatorKernel = 0, Rcoef = 1e-8)
+
+rc = Ricker(param, 30.0, 200.0, 1e6)
+srci = [div(param.NX,2)]
+srcj = [div(param.NY,5)]
+srcv = reshape(rc, :, 1)
+src = AcousticSource(srci, srcj, srcv)
+
+
+C = Variable(3300*ones(param.NX+2, param.NY+2))
+model = AcousticPropagatorSolver(param, src, C)
+@load &quot;data.jld2&quot; u 
+
+U = model.u
+loss = sum((u[:, :, 40] - U[:,:,40])^2)
+g = gradients(loss, C)
+
+sess = Session(); init(sess)
+G = run(sess, g)
+</code></pre>
+<p>The gradient at the first step is shown below:</p>
+<p><img alt="" src="asset/index/gradient.png" /></p>
+<p>The codes can be found <a href="https://github.com/kailaix/ADSeismic.jl/tree/master/examples/benchmark0223">here</a>.</p>
+
+              
+            </article>
+            
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.0238f547.min.js"></script>
+      
+    
+  </body>
+</html>

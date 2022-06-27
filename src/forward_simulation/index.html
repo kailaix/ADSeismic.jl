@@ -1,0 +1,448 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="ADSeismic: A High Performance Package for Automatic Differentiation (AD) based General Seismic Inversion">
+      
+      
+        <meta name="author" content="Weiqiang Zhu">
+      
+      
+        <link rel="canonical" href="https://ai4earth.github.io/adseismic/src/forward_simulation/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-8.3.8">
+    
+    
+      
+        <title>Forward Simulation - ADSeismic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.1d29e8d0.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.cbb835fc.min.css">
+        
+      
+      
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="none" data-md-color-accent="none">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#forward-simulation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ADSeismic" class="md-header__button md-logo" aria-label="ADSeismic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ADSeismic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Forward Simulation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/kailaix/ADSeismic.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ADSeismic.jl
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ADSeismic" class="md-nav__button md-logo" aria-label="ADSeismic" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    ADSeismic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kailaix/ADSeismic.jl" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ADSeismic.jl
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#acoustic-wave-simulation" class="md-nav__link">
+    Acoustic Wave Simulation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#elastic-wave-simulation" class="md-nav__link">
+    Elastic Wave Simulation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#benchmark-of-acoustic-wave-simulation-on-cpu-and-gpu" class="md-nav__link">
+    Benchmark of Acoustic Wave Simulation on CPU and GPU
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-gpus" class="md-nav__link">
+    Multi-GPUs
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+  <a href="https://github.com/kailaix/ADSeismic.jl/edit/master/docs/src/forward_simulation.md" title="Edit this page" class="md-content__button md-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25Z"/></svg>
+  </a>
+
+
+
+<h1 id="forward-simulation">Forward Simulation</h1>
+<p>In this section, we describe forward simulation for acoustic and elastic equations. </p>
+<h2 id="acoustic-wave-simulation">Acoustic Wave Simulation</h2>
+<p>We consider a time dependent wave field $u$ propagating through an unbounded domain $\mathbb{R}^2$. In $\Omega$, the wave field $u$ satisfies </p>
+<p>$\begin{aligned} {u_{tt}} - {c^2}\Delta u =&amp; f \ u =&amp; {u_0} \ {u_t} =&amp; {v_0} \end{aligned}$</p>
+<p>Here $f$ is the source function, $u_0$ and $v_0$ are initial conditions. </p>
+<p>We truncate the computational domain to a bounded 2D domain $\Omega\in \mathbb{R}^2$. To prevent the wave field to reflect from the boundaries, perfect matched layer (PML) are usually used to absorb the waves. Mathematically, the governing equation can be described by a modified partial differential equation (PDE) system with auxilliary variables $\phi$</p>
+<p>$\begin{aligned}{u_{tt}} + ({\xi _1} + {\xi _2}){u_t} + {\xi _1}{\xi _2}u =&amp; {c^2}\Delta u + \nabla  \cdot \phi   \ {\phi _t} =&amp; {\Gamma _1}\phi  + {c^2}{\Gamma _2}\nabla u\end{aligned}$</p>
+<p>and $\Gamma_1$ and $\Gamma_2$ are defined by</p>
+<p>$${\Gamma _1} = \left[ {\matrix{ { - {\xi _1}} &amp; {}  \cr    {} &amp; { - {\xi _2}}  \cr  } } \right],\quad{\Gamma _2} = \left[ {\matrix{{{\xi _2} - {\xi _1}} &amp; {}  \cr    {} &amp; {{\xi _1} - {\xi _2}}  \cr  } }\right]$$</p>
+<p>The terms $\xi_i(x)\geq 0$, $i=1,2$ are the damping profiles and only depend on $x_i$ ($x=(x_1,x_2)$). In our example, we use</p>
+<p>$${\xi _i}(x) = \left{ {\matrix{{0\quad x\not  \in \tilde \Omega }  \cr    {{{\bar \xi }_i}\left( {{{d(x,\tilde \Omega )} \over {{L_i}}} - {{\sin \left( {{{2\pi d(x,\tilde \Omega )} \over {{L_i}}}} \right)} \over {2\pi }}} \right)\quad x \in\tilde \Omega }  \cr  } } \right.$$</p>
+<p>Here $L_i$ is the PML width in $x$ and $y$ direction and $\tilde \Omega_i$ is the domain excluding the PML layer in the $x$ (i=1) or $y$ (i=2) direction. $d(x, \tilde\Omega_i)$ is the distance between $x$ and $\tilde\Omega_i$. See the following figure for illustration. </p>
+<p><img alt="" src="../asset/domain.png" /></p>
+<p>The profiling coefficient $\bar\xi_i$ is given by the relative reflection $R$ (we always use $R=0.001$), the (estimated) velocity of acoustic waves $c$ and the PML width $L_i$</p>
+<pre><code class="language-math">\bar\xi_i = \frac{c}{L_i}\log\left(\frac{1}{R}\right)
+</code></pre>
+<p>In what follows, we assume the velocity is given by the elastic Marmousi model. </p>
+<p><img alt="" src="../asset/marmoursi2-vp.png" /></p>
+<p>The following code snippet shows how we can run the forward simulation with the 13-th source function. For how to generate the dataset <code>marmousi2_model_big_true.mat</code>, we refer you to the notebooks. </p>
+<pre><code class="language-julia">using ADSeismic
+using ADCME
+using PyPlot
+
+matplotlib.use(&quot;agg&quot;)
+model = load_acoustic_model(&quot;models/marmousi2_model_big_true.mat&quot;, IT_DISPLAY=50)
+src = load_acoustic_source(&quot;models/marmousi2_model_big_true.mat&quot;)
+rcv = load_acoustic_receiver(&quot;models/marmousi2_model_big_true.mat&quot;) # assume there is only one receiver
+
+@assert length(src)==length(rcv)
+for i = 1:length(src)
+    SimulatedObservation!(model(src[i]), rcv[i])
+end
+
+sess = Session(); init(sess)
+u = run(sess, model(src[13]).u)
+visualize_file(u, model.param, dirs=&quot;$(@__DIR__)/../docs/src/asset/Acoustic&quot;)
+</code></pre>
+<p>The following animation shows the simulation result. </p>
+<p><img alt="" src="../asset/Acoustic.gif" /></p>
+<h2 id="elastic-wave-simulation">Elastic Wave Simulation</h2>
+<p>The governing equation for the elastic wave propagation is</p>
+<p>$$\begin{aligned}\rho \frac{\partial v_z}{\partial t} =&amp; \frac{\partial \sigma_{zz}}{\partial z} + \frac{\partial \sigma_{xz}}{\partial x}  \\rho \frac{\partial v_x}{\partial t} =&amp; \frac{\partial \sigma_{xx}}{\partial x} + \frac{\partial \sigma_{xz}}{\partial z}  \  \frac{\partial \sigma_{zz}}{\partial t} =&amp; (\lambda + 2\mu)\frac{\partial v_z}{\partial z} + \lambda\frac{\partial v_x}{\partial x}  \  \frac{\partial \sigma_{xx}}{\partial t} =&amp; (\lambda + 2\mu)\frac{\partial v_x}{\partial x} + \lambda\frac{\partial v_z}{\partial z}  \  \frac{\partial \sigma_{xz}}{\partial t} =&amp; \mu \frac{\partial v_z}{\partial x} + \lambda\frac{\partial v_x}{\partial z}\end{aligned}$$</p>
+<p>Here </p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$v_x, v_z$</td>
+<td>Velocity of the wave field in the $x$ and $z$ direction</td>
+</tr>
+<tr>
+<td>$\sigma_{xx}, \sigma_{zz}, \sigma_{xz}$</td>
+<td>Stress tensor</td>
+</tr>
+<tr>
+<td>$\rho$</td>
+<td>Density of the media</td>
+</tr>
+<tr>
+<td>$\lambda$</td>
+<td>Lamé's first parameter</td>
+</tr>
+<tr>
+<td>$\mu$</td>
+<td>Shear modulus</td>
+</tr>
+</tbody>
+</table>
+<p>The following animation shows the simulation result for $v_z$. </p>
+<p><img alt="" src="../asset/Elastic.gif" /></p>
+<h2 id="benchmark-of-acoustic-wave-simulation-on-cpu-and-gpu">Benchmark of Acoustic Wave Simulation on CPU and GPU</h2>
+<p>We benchmark the simulation on CPU and GPU. The configuration for GPU and CPU are </p>
+<table>
+<thead>
+<tr>
+<th>CPU</th>
+<th>GPU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz</td>
+<td>NVIDIA Tesla V100-PCIE-32GB</td>
+</tr>
+</tbody>
+</table>
+<p>The benchmark script can be found in <a href="https://github.com/kailaix/ADSeismic.jl/blob/master/test/BenchmarkAcoustic.jl">BenchmarkAcoustic.jl</a> and <a href="https://github.com/kailaix/ADSeismic.jl/blob/master/test/BenchmarkElastic.jl">BenchmarkElastic.jl</a>.  </p>
+<p>The following shows the comparison of the simulation time for CPU and GPU. </p>
+<table>
+<thead>
+<tr>
+<th>Acoustic Simulation</th>
+<th>Elastic Simulation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img alt="" src="../asset/acoustic_benchmark.png" /></td>
+<td><img alt="" src="../asset/elastic_benchmark.png" /></td>
+</tr>
+</tbody>
+</table>
+<h2 id="multi-gpus">Multi-GPUs</h2>
+<p>With only a few modification to the original simulation codes, the model can also be run on multi-GPUs (see <a href="https://github.com/kailaix/ADSeismic.jl/blob/master/test/AcousticMultiGPU.jl">AcousticMultiGPU.jl</a> for the full script). In this example, we compute the gradients of the loss function (the discrepancy between the observed seismic data and the simulated seismic data) with respect to the acoustic velocity. </p>
+<p>In the following code snippets, we explicitly place different source functions to different GPUs. This can be done with the  <code>@pywith tf.device("/gpu:0")</code> syntax, and the enclosed codes are executed on 0-th GPU.  </p>
+<pre><code class="language-Julia">using ADSeismic
+using ADCME
+using PyPlot
+using PyCall
+using DelimitedFiles
+reset_default_graph()
+
+src = load_acoustic_source(&quot;models/marmousi2_model_initial.mat&quot;)
+ep_sim = load_acoustic_model(&quot;models/marmousi2_model_initial.mat&quot;; inv_vp=true, IT_DISPLAY=0)
+rcv_sim = load_acoustic_receiver(&quot;models/marmousi2_model_initial.mat&quot;)
+
+
+Rs = Array{Array{Float64,2}}(undef, length(src))
+for i = 1:length(src)
+    Rs[i] = readdlm(&quot;models/AcousticData/Acoustic-R$i.txt&quot;)
+end
+
+
+function run_on_gpu_device(batch_id)
+    local loss, g
+    @pywith tf.device(&quot;/gpu:$(batch_id-1)&quot;) begin
+        [SimulatedObservation!(ep_sim(src[i]), rcv_sim[i]) for i = batch_id]
+        loss = sum([sum((rcv_sim[i].rcvv-Rs[i])^2) for i = batch_id]) 
+        g = gradients(loss, get_collection()[1])
+    end
+    return loss, g
+end
+
+losses = Array{PyObject}(undef, 8)
+gs = Array{PyObject}(undef, 8)
+for i = 1:8
+    losses[i], gs[i] = run_on_gpu_device(i)
+end
+g = sum(gs)
+sess = Session(); init(sess)
+run(sess, g)
+</code></pre>
+<p>The following plot shows the dataflow of the above computation. </p>
+<p><img alt="" src="../asset/gradient.png" /></p>
+<p>We take the snapshot of <code>nvidia-smi</code> and it shows the memory and computation utilization of GPUs on a DGX server with 8 Tesla V100s </p>
+<p><img alt="" src="../asset/multigpu.gif" /></p>
+
+              
+            </article>
+            
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.b97dbffb.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version.title": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.0238f547.min.js"></script>
+      
+    
+  </body>
+</html>

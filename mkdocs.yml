@@ -10,4 +10,5 @@ nav:
 theme:
   name: 'material'
 plugins:
-  - mkdocs-jupyter
+  - mkdocs-jupyter:
+      ignore: ["docs/examples/*/*.ipynb", "docs/examples/*/*/*.ipynb"]

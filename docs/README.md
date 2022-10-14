@@ -50,12 +50,20 @@ Use **has_gpu()** to check GPUs exist.
 
 - Acoustic Wave
 
-Script: [AcousticWave.jl](/examples/demo/AcousticWave.jl)
+<!-- Script: [AcousticWave.jl](/examples/demo/AcousticWave.jl) -->
 
-Result: ![Acoustic Wavefield](/examples/demo/acoustic-wavefield.gif)
+<!-- Result: ![Acoustic Wavefield](/examples/demo/acoustic-wavefield.gif) -->
+
+Script: [AcousticWave.jl](https://raw.githubusercontent.com/kailaix/ADSeismic.jl/master/examples/demo/AcousticWave.jl)
+
+Result: ![Acoustic Wavefield](https://raw.githubusercontent.com/kailaix/ADSeismic.jl/master/examples/demo/acoustic-wavefield.gif)
 
 - Elastic Wave
 
-Script: [ElasticWave.jl](/examples/demo/ElasticWave.jl)
+<!-- Script: [ElasticWave.jl](/examples/demo/ElasticWave.jl) -->
 
-Result: ![Elastic Wavefield](/examples/demo/elastic-wavefield.gif)
+<!-- Result: ![Elastic Wavefield](/examples/demo/elastic-wavefield.gif) -->
+
+Script: [ElasticWave.jl](https://raw.githubusercontent.com/kailaix/ADSeismic.jl/master/examples/demo/ElasticWave.jl)
+
+Result: ![Elastic Wavefield](https://raw.githubusercontent.com/kailaix/ADSeismic.jl/master/examples/demo/elastic-wavefield.gif)
